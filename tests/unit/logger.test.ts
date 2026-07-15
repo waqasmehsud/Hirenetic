@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { logger } from "../../lib/logger";
 
@@ -17,7 +18,7 @@ describe("logger", () => {
     const originalNodeEnv = process.env.NODE_ENV;
 
     // Simulate development environment
-    process.env.NODE_ENV = "development";
+    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
     logger.info("info message", { userId: "123" });
     expect(console.log).toHaveBeenCalledWith("[INFO] info message", '{"userId":"123"}');
 
@@ -32,6 +33,6 @@ describe("logger", () => {
     expect(console.debug).toHaveBeenCalledWith("[DEBUG] debug message", "");
 
     // Restore original environment
-    process.env.NODE_ENV = originalNodeEnv;
+    (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
   });
 });

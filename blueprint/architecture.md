@@ -129,3 +129,58 @@ New features follow a fixed shape (detailed in `directory_structure.md`):
 feature module = schema/migration + Zod validation schema + Route Handler(s) + UI components
 ```
 Because auth, middleware, validation conventions, and the notification abstraction are already generic and shared, a new module never needs to modify core infrastructure — it only adds new files under its own directory and a new migration. This is what makes the "no restructuring" objective concrete rather than aspirational.
+
+## 7. Database Schema & Relationships (ERD)
+
+The relational data model enforces referential integrity and strict security bounds at the database tier using Row-Level Security (RLS).
+
+```mermaid
+erDiagram
+    auth_users {
+        uuid id PK
+        varchar email
+    }
+    profiles {
+        uuid id PK, FK
+        text full_name
+        text avatar_url
+        text role "default: 'user'"
+        timestamp created_at
+        timestamp updated_at
+    }
+    items {
+        uuid id PK
+        text name
+        text description
+        uuid user_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    auth_users ||--|| profiles : "one-to-one extension"
+    profiles ||--o{ items : "owns"
+```
+
+### 7.1 Table Definitions & Metadata
+
+#### `auth.users` (External / Supabase Auth)
+Managed natively by Supabase. Stores authentication credentials, cryptographically hashed passwords, and token metadata.
+
+#### `public.profiles`
+Extends `auth.users` via a one-to-one cascading relationship. Controls application-level authorization details and user-profile data.
+* **Fields**:
+  * `id` (`uuid`, Primary Key): References `auth.users(id)` with `ON DELETE CASCADE`.
+  * `full_name` (`text`, Nullable).
+  * `avatar_url` (`text`, Nullable).
+  * `role` (`text`, Not Null, Default `'user'`): User access classification. Standard roles: `user`, `admin`.
+  * `created_at` / `updated_at` (`timestamp with time zone`, Not Null, Default `now()`).
+
+#### `public.items`
+Sample feature module CRUD table. Contains user-owned assets.
+* **Fields**:
+  * `id` (`uuid`, Primary Key): Generated using `gen_random_uuid()`.
+  * `name` (`text`, Not Null): Asset name.
+  * `description` (`text`, Nullable).
+  * `user_id` (`uuid`, Not Null, Foreign Key): References `public.profiles(id)` with `ON DELETE CASCADE`.
+  * `created_at` / `updated_at` (`timestamp with time zone`, Not Null, Default `now()`).
+
