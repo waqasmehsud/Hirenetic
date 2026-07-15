@@ -1,0 +1,50 @@
+# docker-compose.yml
+# Local development orchestration. Production runs on Vercel directly (see deployment.md §2.3).
+# Local Supabase services (Postgres/Auth/Storage/Studio) are managed separately via the
+# Supabase CLI (`supabase start`), NOT reimplemented here — this file only runs the app.
+#
+# Usage:
+#   supabase start                 # starts local Supabase stack
+#   docker compose up --build      # starts the Next.js app, pointed at local Supabase
+#
+# For environment-specific tweaks (e.g., staging-like config for integration testing),
+# use `docker compose -f docker-compose.yml -f docker-compose.staging.yml up`.
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: dev
+    container_name: app_dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=development
+      - APP_ENV=development
+      # Points at the local Supabase CLI stack (default local URLs/ports).
+      # Actual keys come from `.env.local`, populated from `supabase start` output.
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    networks:
+      - app_network
+    # If your local Supabase stack runs in Docker too, uncomment and match its network:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+networks:
+  app_network:
+    driver: bridge
+
+# ---------------------------------------------------------------------------
+# docker-compose.override.yml (optional, gitignored or dev-only, auto-loaded):
+# ---------------------------------------------------------------------------
+# services:
+#   app:
+#     ports:
+#       - "9229:9229"   # e.g., expose Node debugger port locally
