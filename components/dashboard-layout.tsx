@@ -41,36 +41,49 @@ export default function DashboardLayoutClient({
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-black text-foreground flex flex-col md:flex-row scanlines">
+      <div className="scanner-bar" />
+
       {/* Mobile Top Bar */}
-      <header className="md:hidden flex items-center justify-between px-6 py-4 bg-zinc-900 border-b border-zinc-800">
+      <header className="md:hidden flex items-center justify-between px-6 py-4 bg-muted border-b border-border">
         <div className="flex items-center gap-2">
-          <span className="font-extrabold text-xl bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-            LLM-SHEILD
+          <span className="font-mono font-extrabold text-lg text-primary tracking-wider neon-text-green">
+            &gt;_ LLM_SHEILD
           </span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 text-zinc-400 hover:text-white transition focus:outline-none"
+          className="p-2 font-mono text-primary hover:text-white transition focus:outline-none cursor-pointer"
         >
-          {mobileMenuOpen ? "✕" : "☰"}
+          {mobileMenuOpen ? "[ CLOSE ]" : "[ MENU ]"}
         </button>
       </header>
 
       {/* Sidebar - Desktop & Mobile Drawer */}
       <aside
-        className={`w-64 bg-zinc-900/40 border-r border-zinc-800/80 backdrop-blur-xl flex flex-col p-6 fixed inset-y-0 left-0 z-30 transition-transform transform md:translate-x-0 md:relative ${
+        className={`w-64 bg-secondary/80 border-r border-border backdrop-blur-xl flex flex-col p-6 fixed inset-y-0 left-0 z-30 transition-transform transform md:translate-x-0 md:relative ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="hidden md:flex items-center gap-2 mb-8">
-          <span className="font-extrabold text-2xl bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-            LLM-SHEILD
+          <span className="font-mono font-extrabold text-xl text-primary tracking-widest neon-text-green">
+            &gt;_ LLM_SHEILD
           </span>
         </div>
 
+        {/* System Health / Status indicator */}
+        <div className="mb-6 p-3 bg-black/60 border border-border/80 rounded flex items-center gap-3">
+          <div className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+          </div>
+          <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+            SYSTEM STATUS: <span className="text-primary font-bold">SECURE</span>
+          </div>
+        </div>
+
         {/* Navigation Links */}
-        <nav className="flex-1 space-y-2">
+        <nav className="flex-1 space-y-3">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -78,38 +91,40 @@ export default function DashboardLayoutClient({
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-4 py-3 rounded-xl text-sm font-medium transition ${
+                className={`block px-4 py-2.5 border font-mono text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30"
-                    : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+                    ? "bg-primary/5 text-primary border-primary/40 neon-glow-green"
+                    : "text-zinc-500 border-transparent hover:text-primary hover:bg-muted/30"
                 }`}
               >
-                {link.name}
+                [ {link.name} ]
               </Link>
             );
           })}
         </nav>
 
         {/* Profile / Footer */}
-        <div className="mt-auto pt-6 border-t border-zinc-800/80">
-          <div className="mb-4">
-            <p className="text-xs text-zinc-500 truncate">{userEmail}</p>
-            <span
-              className={`inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full uppercase ${
-                role === "admin"
-                  ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-              }`}
-            >
-              {role}
-            </span>
+        <div className="mt-auto pt-6 border-t border-border">
+          <div className="mb-4 font-mono">
+            <p className="text-[11px] text-zinc-500 truncate">{userEmail}</p>
+            <div className="mt-2">
+              <span
+                className={`inline-block px-2.5 py-0.5 text-[9px] font-bold border uppercase tracking-wider ${
+                  role === "admin"
+                    ? "bg-accent/5 text-accent border-accent/30 neon-glow-red"
+                    : "bg-primary/5 text-primary border-primary/30 neon-glow-green"
+                }`}
+              >
+                ROLE: {role}
+              </span>
+            </div>
           </div>
           <button
             onClick={handleSignOut}
             disabled={loading}
-            className="w-full text-center py-2.5 px-4 border border-zinc-800 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition cursor-pointer disabled:opacity-50"
+            className="w-full text-center py-2 border border-border bg-black font-mono text-xs uppercase tracking-wider text-zinc-500 hover:text-accent hover:border-accent hover:neon-glow-red transition-all duration-200 cursor-pointer disabled:opacity-50"
           >
-            {loading ? "Signing out..." : "Sign Out"}
+            {loading ? "TERMINATING..." : "DISCONNECT"}
           </button>
         </div>
       </aside>
@@ -118,7 +133,7 @@ export default function DashboardLayoutClient({
       {mobileMenuOpen && (
         <div
           onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 md:hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-20 md:hidden"
         />
       )}
 
@@ -129,3 +144,4 @@ export default function DashboardLayoutClient({
     </div>
   );
 }
+

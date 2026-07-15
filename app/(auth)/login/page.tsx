@@ -56,34 +56,33 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background gradients for premium look */}
-      <div className="absolute top-0 -left-4 w-96 h-96 bg-indigo-500 rounded-full filter blur-3xl opacity-20 animate-pulse" />
-      <div className="absolute bottom-0 -right-4 w-96 h-96 bg-emerald-500 rounded-full filter blur-3xl opacity-10 animate-pulse delay-75" />
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden scanlines">
+      {/* Laser line overlay scan */}
+      <div className="scanner-bar" />
 
-      <div className="max-w-md w-full space-y-8 p-8 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl shadow-2xl relative z-10">
+      <div className="max-w-md w-full space-y-8 p-8 rounded-none bg-secondary/80 border border-primary/20 backdrop-blur-xl shadow-2xl relative z-10 cyber-panel neon-glow-green">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-white">
-            Welcome to{" "}
-            <span className="bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-              LLM-SHEILD
+          <h2 className="mt-4 text-center text-2xl font-mono font-extrabold tracking-wider text-white">
+            NODE_ACCESS:{" "}
+            <span className="text-primary neon-text-green">
+              LLM_SHEILD
             </span>
           </h2>
-          <p className="mt-2 text-center text-sm text-zinc-400">
-            Sign in to access your secure dashboard
+          <p className="mt-2 text-center text-xs font-mono text-zinc-500 uppercase tracking-widest">
+            AUTHENTICATE TO INITIALIZE SESSION
           </p>
         </div>
 
         {error && (
-          <div className="p-4 rounded-lg bg-red-950/50 border border-red-900/50 text-red-400 text-sm text-center">
-            {error}
+          <div className="p-4 bg-accent/5 border border-accent/30 text-accent text-xs font-mono rounded-none text-center uppercase tracking-wide">
+            ACCESS_DENIED: {error}
           </div>
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-          <div className="space-y-4">
+          <div className="space-y-4 font-mono text-xs">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
+              <label htmlFor="email" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
                 Email Address
               </label>
               <input
@@ -94,21 +93,21 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
                 placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <div className="flex justify-between items-center">
-                <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
-                  Password
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block font-medium text-zinc-400 uppercase tracking-wider">
+                  Secret Key
                 </label>
                 <Link
                   href="/reset-password"
-                  className="text-xs text-indigo-400 hover:text-indigo-300 transition"
+                  className="text-[11px] text-zinc-500 hover:text-primary transition-all duration-150"
                 >
-                  Forgot password?
+                  [ RECOVER ]
                 </Link>
               </div>
               <input
@@ -119,7 +118,7 @@ function LoginForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
                 placeholder="••••••••"
               />
             </div>
@@ -129,44 +128,44 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-3 px-4 border border-primary bg-primary text-black hover:bg-black hover:text-primary font-mono text-xs font-bold uppercase tracking-widest transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:neon-glow-green"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "INITIALIZING..." : "CONNECT_SESSION"}
             </button>
           </div>
         </form>
 
-        <div className="relative my-6">
+        <div className="relative my-6 font-mono text-[10px]">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-800" />
+            <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-zinc-900 px-2 text-zinc-500">Or continue with</span>
+            <span className="bg-black/80 px-2 text-zinc-500">OR PROVIDE KEYCARD</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 font-mono text-xs">
           <button
             onClick={() => handleOAuthLogin("github")}
-            className="flex items-center justify-center py-3 border border-zinc-800 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white font-medium transition cursor-pointer"
+            className="flex items-center justify-center py-2.5 border border-border bg-black hover:border-primary/40 hover:text-primary transition-all duration-150 cursor-pointer"
           >
-            GitHub
+            [ GITHUB ]
           </button>
           <button
             onClick={() => handleOAuthLogin("google")}
-            className="flex items-center justify-center py-3 border border-zinc-800 rounded-xl bg-zinc-950 hover:bg-zinc-900 text-white font-medium transition cursor-pointer"
+            className="flex items-center justify-center py-2.5 border border-border bg-black hover:border-primary/40 hover:text-primary transition-all duration-150 cursor-pointer"
           >
-            Google
+            [ GOOGLE ]
           </button>
         </div>
 
-        <p className="mt-8 text-center text-sm text-zinc-400">
-          Don&apos;t have an account?{" "}
+        <p className="mt-8 text-center text-xs font-mono text-zinc-500 uppercase">
+          NO REGISTERED NODE?{" "}
           <Link
             href="/signup"
-            className="font-medium text-indigo-400 hover:text-indigo-300 transition"
+            className="text-primary hover:text-white transition-all font-bold"
           >
-            Sign up
+            [ CREATE_ACCOUNT ]
           </Link>
         </p>
       </div>
@@ -178,8 +177,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen flex flex-col items-center justify-center bg-black font-mono space-y-4">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-primary tracking-widest animate-pulse">CONNECTING TO SHIELD NODE...</p>
         </div>
       }
     >

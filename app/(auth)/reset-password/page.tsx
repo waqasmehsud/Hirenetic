@@ -102,40 +102,40 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-0 -left-4 w-96 h-96 bg-indigo-500 rounded-full filter blur-3xl opacity-20 animate-pulse" />
-      <div className="absolute bottom-0 -right-4 w-96 h-96 bg-emerald-500 rounded-full filter blur-3xl opacity-10 animate-pulse delay-75" />
+    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden scanlines">
+      {/* Laser line overlay scan */}
+      <div className="scanner-bar" />
 
-      <div className="max-w-md w-full space-y-8 p-8 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 backdrop-blur-xl shadow-2xl relative z-10">
+      <div className="max-w-md w-full space-y-8 p-8 rounded-none bg-secondary/80 border border-primary/20 backdrop-blur-xl shadow-2xl relative z-10 cyber-panel neon-glow-green">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold tracking-tight text-white">
-            {isRecovery ? "Update Password" : "Reset Password"}
+          <h2 className="mt-4 text-center text-2xl font-mono font-extrabold tracking-wider text-white">
+            {isRecovery ? "ACCESS_UPDATE" : "ACCESS_RECOVERY"}: <span className="text-primary neon-text-green">LLM_SHEILD</span>
           </h2>
-          <p className="mt-2 text-center text-sm text-zinc-400">
+          <p className="mt-2 text-center text-xs font-mono text-zinc-500 uppercase tracking-widest">
             {isRecovery
-              ? "Enter your new password below"
-              : "Enter your email to receive recovery instructions"}
+              ? "COMMIT NEW PASSPHRASE SECURELY"
+              : "REQUEST TEMPORARY ACCESS SIGNATURE"}
           </p>
         </div>
 
         {error && (
-          <div className="p-4 rounded-lg bg-red-950/50 border border-red-900/50 text-red-400 text-sm text-center">
-            {error}
+          <div className="p-4 bg-accent/5 border border-accent/30 text-accent text-xs font-mono rounded-none text-center uppercase tracking-wide">
+            RECOVERY_ERROR: {error}
           </div>
         )}
 
         {message && (
-          <div className="p-4 rounded-lg bg-emerald-950/50 border border-emerald-900/50 text-emerald-400 text-sm text-center">
-            {message}
+          <div className="p-4 bg-primary/5 border border-primary/30 text-primary text-xs font-mono rounded-none text-center uppercase tracking-wide">
+            SYSTEM_MESSAGE: {message}
           </div>
         )}
 
         {isRecovery ? (
           <form className="mt-8 space-y-6" onSubmit={handleUpdatePassword}>
-            <div className="space-y-4">
+            <div className="space-y-4 font-mono text-xs">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-zinc-300">
-                  New Password
+                <label htmlFor="password" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                  New Master Password
                 </label>
                 <input
                   id="password"
@@ -144,13 +144,13 @@ function ResetPasswordForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
                   placeholder="••••••••"
                 />
               </div>
 
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-300">
+                <label htmlFor="confirmPassword" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
                   Confirm New Password
                 </label>
                 <input
@@ -160,7 +160,7 @@ function ResetPasswordForm() {
                   required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1 block w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
                   placeholder="••••••••"
                 />
               </div>
@@ -170,50 +170,52 @@ function ResetPasswordForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-primary bg-primary text-black hover:bg-black hover:text-primary font-mono text-xs font-bold uppercase tracking-widest transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:neon-glow-green"
               >
-                {loading ? "Updating password..." : "Update Password"}
+                {loading ? "COMMITTING ACCESS..." : "COMMIT_NEW_PASSWORD"}
               </button>
             </div>
           </form>
         ) : (
           <form className="mt-8 space-y-6" onSubmit={handleRequestReset}>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-300">
-                Email Address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                placeholder="you@example.com"
-              />
+            <div className="space-y-4 font-mono text-xs">
+              <div>
+                <label htmlFor="email" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
+                  Registered Email Address
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
 
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-primary bg-primary text-black hover:bg-black hover:text-primary font-mono text-xs font-bold uppercase tracking-widest transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:neon-glow-green"
               >
-                {loading ? "Sending link..." : "Send Reset Link"}
+                {loading ? "DISPATCHING..." : "DISPATCH_RECOVERY_SIGNATURE"}
               </button>
             </div>
           </form>
         )}
 
-        <p className="mt-8 text-center text-sm text-zinc-400">
-          Back to{" "}
+        <p className="mt-8 text-center text-xs font-mono text-zinc-500 uppercase">
+          BACK TO LOGIN?{" "}
           <Link
             href="/login"
-            className="font-medium text-indigo-400 hover:text-indigo-300 transition"
+            className="text-primary hover:text-white transition-all font-bold"
           >
-            Login
+            [ RETRACT_TO_LOGIN ]
           </Link>
         </p>
       </div>
