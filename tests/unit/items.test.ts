@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { User } from "@supabase/supabase-js";
 import { GET, POST } from "../../app/api/v1/items/route";
 import { GET as getSingle, PATCH, DELETE } from "../../app/api/v1/items/[id]/route";
-import { requireAuth, requireOwnership } from "../../lib/auth/guards";
+import { GET as getAdminItems } from "../../app/api/dashboard/admin/items/route";
+import { requireAuth, requireOwnership, requireAdmin } from "../../lib/auth/guards";
 import { createServerSupabaseClient } from "../../lib/supabase/server";
 import { rateLimit } from "../../lib/rate-limit";
 
@@ -10,6 +11,7 @@ import { rateLimit } from "../../lib/rate-limit";
 vi.mock("../../lib/auth/guards", () => ({
   requireAuth: vi.fn(),
   requireOwnership: vi.fn(),
+  requireAdmin: vi.fn(),
   AuthError: class extends Error {
     constructor(
       public status: number,
@@ -34,6 +36,7 @@ type MockSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
 
 describe("Items API Endpoints", () => {
   const mockUser = { id: "user-123", email: "user@example.com" } as unknown as User;
+  const mockAdmin = { id: "admin-123", email: "admin@example.com" } as unknown as User;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -199,6 +202,44 @@ describe("Items API Endpoints", () => {
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ success: true, message: "Item deleted successfully" });
       expect(requireOwnership).toHaveBeenCalledWith("user-123");
+    });
+  });
+
+  describe("GET /api/dashboard/admin/items", () => {
+    it("should fetch all items joined with profiles for admins", async () => {
+      vi.mocked(requireAdmin).mockResolvedValue(mockAdmin);
+      vi.mocked(rateLimit).mockResolvedValue({ success: true, limit: 30, remaining: 29, reset: 123456 });
+
+      const mockItems = [
+        {
+          id: "item-123",
+          name: "Item",
+          user_id: "user-123",
+          profiles: { full_name: "User One", role: "user" },
+        },
+      ];
+      const mockSupabase = {
+        from: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: mockItems, error: null }),
+      };
+      vi.mocked(createServerSupabaseClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient);
+
+      const res = await getAdminItems();
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual(mockItems);
+      expect(requireAdmin).toHaveBeenCalled();
+    });
+
+    it("should fail if requester is not an admin", async () => {
+      const adminError = new Error("Forbidden: Admin privileges required");
+      (adminError as { status?: number }).status = 403;
+      vi.mocked(requireAdmin).mockRejectedValue(adminError);
+
+      const res = await getAdminItems();
+      expect(res.status).toBe(403);
+      const data = (await res.json()) as { error: string };
+      expect(data.error).toBe("Forbidden: Admin privileges required");
     });
   });
 });
