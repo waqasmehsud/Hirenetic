@@ -35,6 +35,22 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
+      include: ["lib/**/*.ts", "app/**/*.ts"],
+      exclude: [
+        "tests/**",
+        "*.config.*",
+        "node_modules/**",
+        "lib/supabase/**",       // Thin SDK wrappers — tested indirectly via integration tests
+        "lib/env.ts",            // Module-level Zod validation — fails fast at boot, not unit-testable
+        "lib/auth/session.ts",   // Depends on Next.js cookies() — tested via E2E
+        "app/api/auth/**",       // OAuth callback — tested via E2E
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 60,
+        statements: 80,
+      },
     },
   },
 });
