@@ -49,3 +49,7 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# local agent environment
+/.agents/
+

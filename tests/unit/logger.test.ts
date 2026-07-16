@@ -12,13 +12,13 @@ describe("logger", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs(); // Yeh ensure karega ke env variables wapas apni original state mein aa jayein
   });
 
   it("should format and output logs correctly depending on environment", () => {
-    const originalNodeEnv = process.env.NODE_ENV;
+    // Vitest ka built-in tareeqa environment set karne ke liye
+    vi.stubEnv("NODE_ENV", "development");
 
-    // Simulate development environment
-    (process.env as Record<string, string | undefined>).NODE_ENV = "development";
     logger.info("info message", { userId: "123" });
     expect(console.log).toHaveBeenCalledWith("[INFO] info message", '{"userId":"123"}');
 
@@ -31,8 +31,5 @@ describe("logger", () => {
 
     logger.debug("debug message");
     expect(console.debug).toHaveBeenCalledWith("[DEBUG] debug message", "");
-
-    // Restore original environment
-    (process.env as Record<string, string | undefined>).NODE_ENV = originalNodeEnv;
   });
 });
