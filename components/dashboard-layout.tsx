@@ -37,6 +37,7 @@ export default function DashboardLayoutClient({
 
   const navLinks = [
     { name: "Dashboard Console", href: "/dashboard" },
+    { name: "Job Crawler", href: "/dashboard/crawler" },
   ];
 
   return (
