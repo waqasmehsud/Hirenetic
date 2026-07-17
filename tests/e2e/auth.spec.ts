@@ -49,7 +49,7 @@ test.describe("Authentication Flows", () => {
           body: JSON.stringify({
             id: "user-123",
             email: "user@example.com",
-            user_metadata: { role: "user", full_name: "Jane Doe" },
+            user_metadata: { role: "admin", full_name: "Jane Doe" },
             aud: "authenticated",
             role: "authenticated",
           }),
@@ -85,7 +85,7 @@ test.describe("Authentication Flows", () => {
             user: {
               id: "user-123",
               email: "user@example.com",
-              user_metadata: { role: "user", full_name: "Jane Doe" },
+              user_metadata: { role: "admin", full_name: "Jane Doe" },
               aud: "authenticated",
               role: "authenticated",
             },
@@ -110,7 +110,7 @@ test.describe("Authentication Flows", () => {
 
     // Inject e2e cookie session so server redirects accept the navigation
     await context.addCookies([
-      { name: "e2e-session", value: "user", domain: "localhost", path: "/" },
+      { name: "e2e-session", value: "admin", domain: "localhost", path: "/" },
     ]);
 
     await page.click('button[type="submit"]');

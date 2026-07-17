@@ -75,19 +75,21 @@ export async function proxy(request: NextRequest) {
     path.startsWith("/signup") ||
     path.startsWith("/reset-password");
   const isAdminRoute =
-    path.startsWith("/dashboard/admin") ||
-    path.startsWith("/api/dashboard/admin");
+    path.startsWith("/dashboard") ||
+    path.startsWith("/api/dashboard");
 
   // 2. Protect Routes
   if (user) {
+    const role = user.user_metadata?.role || "user";
+
     // Authenticated user trying to access public auth pages (login/signup/reset-password)
     if (isAuthRoute) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      const dest = role === "admin" ? "/dashboard" : "/";
+      return NextResponse.redirect(new URL(dest, request.url));
     }
 
     // Role-gating for admin routes
     if (isAdminRoute) {
-      const role = user.user_metadata?.role || "user";
       if (role !== "admin") {
         if (path.startsWith("/api/")) {
           return NextResponse.json(
@@ -95,7 +97,7 @@ export async function proxy(request: NextRequest) {
             { status: 403 }
           );
         }
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+        return NextResponse.redirect(new URL("/", request.url));
       }
     }
   } else {
