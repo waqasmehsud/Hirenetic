@@ -9,12 +9,12 @@ function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Derived state from searchParams (calculated during render)
+  // Derived state from searchParams
   const code = searchParams.get("code");
   const type = searchParams.get("type");
   const isRecoveryParam = !!(code || type === "recovery");
 
-  // Track if we recovered session asynchronously from Supabase Auth
+  // Track recovery session asynchronously
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const isRecovery = isRecoveryParam || hasRecoverySession;
 
@@ -50,9 +50,12 @@ function ResetPasswordForm() {
 
     try {
       const supabase = createBrowserSupabaseClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: `${window.location.origin}/reset-password`,
+        }
+      );
 
       if (resetError) {
         setError(resetError.message);
@@ -102,122 +105,194 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden scanlines">
-      {/* Laser line overlay scan */}
-      <div className="scanner-bar" />
+    <div className="min-h-screen bg-[#080c16] text-white flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans selection:bg-indigo-500/35">
+      {/* Background glowing blobs */}
+      <div className="glow-blob w-[400px] h-[400px] bg-indigo-500 top-[-10%] left-[-10%] opacity-20" />
+      <div className="glow-blob w-[400px] h-[400px] bg-emerald-500 bottom-[-10%] right-[-10%] opacity-20" />
 
-      <div className="max-w-md w-full space-y-8 p-8 rounded-none bg-secondary/80 border border-primary/20 backdrop-blur-xl shadow-2xl relative z-10 cyber-panel neon-glow-green">
-        <div>
-          <h2 className="mt-4 text-center text-2xl font-mono font-extrabold tracking-wider text-white">
-            {isRecovery ? "ACCESS_UPDATE" : "ACCESS_RECOVERY"}: <span className="text-primary neon-text-green">LLM_SHEILD</span>
-          </h2>
-          <p className="mt-2 text-center text-xs font-mono text-zinc-500 uppercase tracking-widest">
-            {isRecovery
-              ? "COMMIT NEW PASSPHRASE SECURELY"
-              : "REQUEST TEMPORARY ACCESS SIGNATURE"}
-          </p>
+      {/* Main glassmorphic wrapper */}
+      <div className="max-w-4xl w-full bg-slate-900/60 border border-slate-800 rounded-[32px] overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px] shadow-2xl relative z-10 backdrop-blur-xl">
+        {/* Left column: form (7 cols) */}
+        <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center text-white">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 12 12 18 12 22Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <span className="font-extrabold text-lg bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
+              LLM Shield
+            </span>
+          </Link>
+
+          {/* Form container */}
+          <div className="my-6 space-y-6">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-extrabold text-white tracking-tight">
+                {isRecovery ? "Update Password" : "Recover Key"}
+              </h1>
+              <p className="text-[13px] text-slate-400">
+                {isRecovery
+                  ? "Set your new secure access credentials."
+                  : "Request credentials link to be sent to your inbox."}
+              </p>
+            </div>
+
+            {error && (
+              <div className="p-3.5 bg-rose-950/30 border border-rose-900/60 text-rose-400 text-[13px] rounded-xl text-center">
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="p-3.5 bg-emerald-950/30 border border-emerald-900/60 text-emerald-400 text-[13px] rounded-xl text-center font-semibold">
+                {message}
+              </div>
+            )}
+
+            {isRecovery ? (
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="space-y-3.5">
+                  {/* Password */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="password"
+                      className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
+                    >
+                      New Password Key
+                    </label>
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    />
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="confirmPassword"
+                      className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
+                    >
+                      Confirm New Key
+                    </label>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg"
+                >
+                  {loading ? "Updating key..." : "Update access credentials"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleRequestReset} className="space-y-4">
+                <div className="space-y-3.5">
+                  {/* Email address */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="email"
+                      className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
+                    >
+                      Registered Email address
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full px-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg"
+                >
+                  {loading ? "Sending..." : "Request reset link"}
+                </button>
+              </form>
+            )}
+          </div>
+
+          {/* Footer link */}
+          <div className="text-center">
+            <p className="text-[13px] text-slate-400">
+              Remembered password?{" "}
+              <Link
+                href="/login"
+                className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+              >
+                Back to Sign in
+              </Link>
+            </p>
+          </div>
         </div>
 
-        {error && (
-          <div className="p-4 bg-accent/5 border border-accent/30 text-accent text-xs font-mono rounded-none text-center uppercase tracking-wide">
-            RECOVERY_ERROR: {error}
+        {/* Right column: Graphic panel art (5 cols) */}
+        <div className="hidden md:col-span-5 p-4 flex-col justify-between relative bg-slate-950/40 border-l border-slate-800">
+          <div className="h-full w-full rounded-[24px] relative flex flex-col justify-between p-6 overflow-hidden bg-gradient-to-b from-indigo-950/30 to-slate-950/60 border border-slate-800/80">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-2xl rounded-full" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/10 blur-2xl rounded-full" />
+
+            <div className="flex justify-end">
+              <span className="text-[9px] uppercase tracking-widest font-mono bg-indigo-950 border border-indigo-800/60 text-indigo-400 px-2.5 py-0.5 rounded-full">
+                active-guard-2.0
+              </span>
+            </div>
+
+            <div className="space-y-4 relative z-10">
+              <div className="text-emerald-400 font-mono text-[11px] animate-pulse">
+                {"// CRYPTO ENGINE READY"}
+              </div>
+              <h3 className="text-xl font-bold leading-snug">
+                Securing compliance and PII data streams.
+              </h3>
+              <p className="text-[12px] text-slate-400 leading-relaxed">
+                Protect your pipeline records from credentials loss.
+              </p>
+            </div>
+
+            <div className="text-[11px] text-slate-600 font-mono">
+              Strict node policies.
+            </div>
           </div>
-        )}
-
-        {message && (
-          <div className="p-4 bg-primary/5 border border-primary/30 text-primary text-xs font-mono rounded-none text-center uppercase tracking-wide">
-            SYSTEM_MESSAGE: {message}
-          </div>
-        )}
-
-        {isRecovery ? (
-          <form className="mt-8 space-y-6" onSubmit={handleUpdatePassword}>
-            <div className="space-y-4 font-mono text-xs">
-              <div>
-                <label htmlFor="password" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
-                  New Master Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-primary bg-primary text-black hover:bg-black hover:text-primary font-mono text-xs font-bold uppercase tracking-widest transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:neon-glow-green"
-              >
-                {loading ? "COMMITTING ACCESS..." : "COMMIT_NEW_PASSWORD"}
-              </button>
-            </div>
-          </form>
-        ) : (
-          <form className="mt-8 space-y-6" onSubmit={handleRequestReset}>
-            <div className="space-y-4 font-mono text-xs">
-              <div>
-                <label htmlFor="email" className="block font-medium text-zinc-400 uppercase tracking-wider mb-2">
-                  Registered Email Address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full px-4 py-3 bg-black border border-border rounded-none text-white focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-mono text-sm transition placeholder-zinc-700"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-primary bg-primary text-black hover:bg-black hover:text-primary font-mono text-xs font-bold uppercase tracking-widest transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:neon-glow-green"
-              >
-                {loading ? "DISPATCHING..." : "DISPATCH_RECOVERY_SIGNATURE"}
-              </button>
-            </div>
-          </form>
-        )}
-
-        <p className="mt-8 text-center text-xs font-mono text-zinc-500 uppercase">
-          BACK TO LOGIN?{" "}
-          <Link
-            href="/login"
-            className="text-primary hover:text-white transition-all font-bold"
-          >
-            [ RETRACT_TO_LOGIN ]
-          </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
@@ -227,8 +302,11 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#080c16] font-sans space-y-4 text-white">
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-[13px] text-slate-400 tracking-wider animate-pulse">
+            Loading recovery console...
+          </p>
         </div>
       }
     >
