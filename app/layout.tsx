@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LLM-SHEILD | Secure Database Operations Console",
-  description: "AI-powered real-time security vault and compliance logging system.",
+  title: "Hirenetic — AI-Powered Job Resonance",
+  description:
+    "Compare your resume against crawled job postings with semantic precision. Quiet, confident career matching.",
 };
 
 export default function RootLayout({
@@ -13,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased scroll-smooth">
-      <body className="min-h-full flex flex-col bg-black text-foreground font-sans selection:bg-primary selection:text-black">
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans selection:bg-signal selection:text-ink">
         {children}
       </body>
     </html>

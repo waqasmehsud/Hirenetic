@@ -1,136 +1,172 @@
-@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Fira Sans", sans-serif;
-  --font-mono: "Fira Code", monospace;
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 
-  --color-primary: #00FF41;
-  --color-on-primary: #0F172A;
-  --color-secondary: #0D0D0D;
-  --color-accent: #FF3333;
-  --color-background: #000000;
-  --color-foreground: #E0E0E0;
-  --color-muted: #181818;
-  --color-border: #1F1F1F;
-  --color-destructive: #EF4444;
-  --color-ring: #00FF41;
+  --color-ink: #0e1420;
+  --color-paper: #f6f5f1;
+  --color-signal: #3ddc97;
+  --color-caution: #e8a33d;
+  --color-muted-ink: #5b6472;
+  --color-wire: #243044;
 }
 
 :root {
-  --background: #000000;
-  --foreground: #E0E0E0;
+  --background: #0e1420;
+  --foreground: #f6f5f1;
+  --border: #243044;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "Fira Sans", sans-serif;
+  font-family: var(--font-sans);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom styles for cybersecurity operations console look */
-.cyber-panel {
-  background: rgba(13, 13, 13, 0.7);
-  border: 1px solid #1F1F1F;
-  backdrop-filter: blur(12px);
-  position: relative;
+/* Glassmorphism Styles */
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
 }
 
-.cyber-panel::before {
-  content: "";
+.glass-panel-dark {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Glowing Neon background blobs */
+.glow-blob {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 4px;
-  border-top: 1px solid #00FF41;
-  border-left: 1px solid #00FF41;
-}
-
-.cyber-panel::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 4px;
-  height: 4px;
-  border-bottom: 1px solid #00FF41;
-  border-right: 1px solid #00FF41;
-}
-
-.neon-glow-green {
-  box-shadow: 0 0 15px rgba(0, 255, 65, 0.15);
-  border-color: rgba(0, 255, 65, 0.4);
-}
-
-.neon-glow-red {
-  box-shadow: 0 0 15px rgba(255, 51, 51, 0.15);
-  border-color: rgba(255, 51, 51, 0.4);
-}
-
-.neon-text-green {
-  text-shadow: 0 0 8px rgba(0, 255, 65, 0.5);
-}
-
-.neon-text-red {
-  text-shadow: 0 0 8px rgba(255, 51, 51, 0.5);
-}
-
-/* scanline scan effect */
-.scanlines {
-  position: relative;
-  overflow: hidden;
-}
-
-.scanlines::before {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 2;
-  background-size: 100% 2px, 3px 100%;
-  pointer-events: none;
-}
-
-@keyframes scanline-anim {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-.scanner-bar {
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(to right, transparent, #00FF41, transparent);
-  animation: scanline-anim 6s linear infinite;
+  border-radius: 50%;
+  filter: blur(80px);
   opacity: 0.15;
+  z-index: 0;
   pointer-events: none;
-  z-index: 5;
+}
+
+.dark .glow-blob {
+  opacity: 0.25;
+}
+
+/* Glass Buttons */
+.btn-glass-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  transition: all 0.25s ease;
+}
+
+.btn-glass-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+  filter: brightness(1.1);
+}
+
+.btn-glass-primary:active {
+  transform: translateY(0);
+}
+
+.btn-glass-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  transition: all 0.25s ease;
+}
+
+.light .btn-glass-secondary {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.btn-glass-secondary:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.light .btn-glass-secondary:hover {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.btn-glass-secondary:active {
+  transform: translateY(0);
+}
+
+.btn-glass-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  transition: all 0.25s ease;
+}
+
+.btn-glass-accent:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  filter: brightness(1.1);
+}
+
+.btn-glass-accent:active {
+  transform: translateY(0);
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F1F1F;
-  border-radius: 3px;
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00FF41;
+  background: #94a3b8;
+}
+
+html {
+  scroll-behavior: smooth;
 }
