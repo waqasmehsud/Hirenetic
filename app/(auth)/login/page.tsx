@@ -58,63 +58,53 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080c16] text-white flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans selection:bg-indigo-500/35">
-      {/* Background glowing blobs */}
-      <div className="glow-blob w-[400px] h-[400px] bg-indigo-500 top-[-10%] left-[-10%] opacity-20" />
-      <div className="glow-blob w-[400px] h-[400px] bg-emerald-500 bottom-[-10%] right-[-10%] opacity-20" />
+    <div className="min-h-screen bg-ink text-paper flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden font-sans selection:bg-signal selection:text-ink">
+      {/* Precision grid lines in background */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#24304415_1px,transparent_1px),linear-gradient(to_bottom,#24304415_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
-      {/* Main glassmorphic wrapper */}
-      <div className="max-w-4xl w-full bg-slate-900/60 border border-slate-800 rounded-[32px] overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px] shadow-2xl relative z-10 backdrop-blur-xl">
+      {/* Main panel card */}
+      <div className="max-w-4xl w-full border border-wire bg-ink/75 backdrop-blur-md rounded-lg overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[550px] relative z-10 shadow-2xl">
+        
         {/* Left column: Login form (7 cols) */}
         <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center text-white">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 12 12 18 12 22Z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+          
+          {/* Brand Logo Header */}
+          <Link href="/" className="flex items-center gap-3.5 group">
+            <div className="w-8 h-8 border border-wire flex items-center justify-center relative overflow-hidden">
+              {/* Pulsing indicator block */}
+              <div className="w-2.5 h-2.5 bg-signal animate-pulse" />
+              <div className="absolute inset-0 border border-wire opacity-50 pointer-events-none" />
             </div>
-            <span className="font-extrabold text-lg bg-gradient-to-r from-[#3ddc97] to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+            <span className="font-display font-bold text-2xl tracking-tight text-paper">
               HIRENETIC
             </span>
           </Link>
 
-          {/* Form */}
+          {/* Core Login Form Panel */}
           <div className="my-6 space-y-6">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-extrabold text-white tracking-tight">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-display font-bold text-paper tracking-tight uppercase">
                 Sign In
               </h1>
-              <p className="text-[13px] text-slate-400">
-                Access your career calibration console node.
+              <p className="text-[12px] text-muted-ink font-mono">
+                [ ACCESS YOUR CALIBRATION CONSOLE NODE ]
               </p>
             </div>
 
             {error && (
-              <div className="p-3.5 bg-rose-950/30 border border-rose-900/60 text-rose-400 text-[13px] rounded-xl text-center">
-                Authentication failed: {error}
+              <div className="p-3 bg-red-950/20 border border-red-800/80 text-red-400 text-xs font-mono rounded-sm text-center">
+                CONNECTION FAILURE: {error}
               </div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-3.5">
-                {/* Email Address */}
+              <div className="space-y-4">
+                
+                {/* Email Address Input */}
                 <div className="space-y-1.5">
                   <label
                     htmlFor="email"
-                    className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
+                    className="block text-[10px] font-bold text-muted-ink uppercase tracking-widest font-mono"
                   >
                     Email address
                   </label>
@@ -126,24 +116,24 @@ function LoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    className="w-full px-4 py-3 bg-ink/50 border border-wire rounded-sm text-[13px] text-paper placeholder-muted-ink/50 focus:outline-none focus:border-signal transition-all font-mono"
                   />
                 </div>
 
-                {/* Password */}
+                {/* Password Input */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <label
                       htmlFor="password"
-                      className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
+                      className="block text-[10px] font-bold text-muted-ink uppercase tracking-widest font-mono"
                     >
                       Secret Key
                     </label>
                     <Link
                       href="/reset-password"
-                      className="text-[12px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                      className="text-[10px] text-signal hover:underline font-mono"
                     >
-                      Recover key?
+                      [ RECOVER KEY ]
                     </Link>
                   </div>
                   <input
@@ -154,7 +144,7 @@ function LoginForm() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 bg-slate-950/70 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                    className="w-full px-4 py-3 bg-ink/50 border border-wire rounded-sm text-[13px] text-paper placeholder-muted-ink/50 focus:outline-none focus:border-signal transition-all font-mono"
                   />
                 </div>
               </div>
@@ -163,28 +153,30 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg shadow-indigo-550/20"
+                className="w-full py-3.5 bg-signal hover:bg-emerald-400 text-ink font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-3 cursor-pointer shadow-lg shadow-signal/15 rounded-sm disabled:opacity-50"
               >
                 {loading ? "Synchronizing session..." : "Initialize Session"}
               </button>
             </form>
 
             {/* Social logins */}
-            <div className="space-y-3 pt-4 border-t border-slate-800">
-              <p className="text-center text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+            <div className="space-y-3 pt-4 border-t border-wire/60">
+              <p className="text-center text-[10px] text-muted-ink uppercase tracking-widest font-bold font-mono">
                 Or Connect Keycard
               </p>
 
               <div className="grid grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={() => handleOAuthLogin("github")}
-                  className="flex items-center justify-center gap-2 py-2.5 border border-slate-800 bg-slate-950/50 hover:bg-slate-950 text-[13px] font-semibold rounded-xl cursor-pointer transition-all hover:border-slate-700"
+                  className="flex items-center justify-center gap-2 py-2.5 border border-wire bg-ink hover:border-paper hover:bg-wire/20 text-paper font-mono text-xs uppercase tracking-wider transition-all cursor-pointer rounded-sm"
                 >
                   GitHub
                 </button>
                 <button
+                  type="button"
                   onClick={() => handleOAuthLogin("google")}
-                  className="flex items-center justify-center gap-2 py-2.5 border border-slate-800 bg-slate-950/50 hover:bg-slate-950 text-[13px] font-semibold rounded-xl cursor-pointer transition-all hover:border-slate-700"
+                  className="flex items-center justify-center gap-2 py-2.5 border border-wire bg-ink hover:border-paper hover:bg-wire/20 text-paper font-mono text-xs uppercase tracking-wider transition-all cursor-pointer rounded-sm"
                 >
                   Google
                 </button>
@@ -194,11 +186,11 @@ function LoginForm() {
 
           {/* Footer link */}
           <div className="text-center">
-            <p className="text-[13px] text-slate-400">
+            <p className="text-[13px] text-muted-ink">
               New client?{" "}
               <Link
                 href="/signup"
-                className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+                className="text-signal hover:underline font-bold transition-colors"
               >
                 Initialize new profile
               </Link>
@@ -207,32 +199,31 @@ function LoginForm() {
         </div>
 
         {/* Right column: Graphic panel art (5 cols) */}
-        <div className="hidden md:col-span-5 p-4 flex-col justify-between relative bg-slate-950/40 border-l border-slate-800">
-          {/* Subtle decoration inside panels */}
-          <div className="h-full w-full rounded-[24px] relative flex flex-col justify-between p-6 overflow-hidden bg-gradient-to-b from-indigo-950/30 to-slate-950/60 border border-slate-800/80">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 blur-2xl rounded-full" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/10 blur-2xl rounded-full" />
+        <div className="hidden md:col-span-5 p-4 flex-col justify-between relative bg-wire/5 border-l border-wire">
+          <div className="h-full w-full rounded-sm relative flex flex-col justify-between p-6 overflow-hidden bg-ink/40 border border-wire/60">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#3ddc97]/5 blur-2xl rounded-full" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-500/5 blur-2xl rounded-full" />
 
             <div className="flex justify-end">
-              <span className="text-[9px] uppercase tracking-widest font-mono bg-indigo-950 border border-indigo-800/60 text-indigo-400 px-2.5 py-0.5 rounded-full">
+              <span className="text-[9px] uppercase tracking-widest font-mono bg-wire/30 border border-wire text-muted-ink px-2.5 py-0.5 rounded-sm">
                 hirenetic-telemetry
               </span>
             </div>
 
             <div className="space-y-4 relative z-10">
-              <div className="text-emerald-400 font-mono text-[11px] animate-pulse">
+              <div className="text-signal font-mono text-[11px] animate-pulse">
                 {"// RESONANCE SYNCED"}
               </div>
-              <h3 className="text-xl font-bold leading-snug">
+              <h3 className="text-xl font-display font-bold leading-snug uppercase tracking-tight text-paper">
                 Calibrate your career signal to job resonance.
               </h3>
-              <p className="text-[12px] text-slate-400 leading-relaxed">
+              <p className="text-[12px] text-muted-ink leading-relaxed font-sans">
                 Upload your resume, parse structural skill vectors, and watch matching channels synchronize.
               </p>
             </div>
 
-            <div className="text-[11px] text-slate-600 font-mono">
-              IP Address logged.
+            <div className="text-[10px] text-muted-ink font-mono">
+              [ IP Sweeper Logged ]
             </div>
           </div>
         </div>
@@ -245,10 +236,12 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-[#080c16] font-sans space-y-4 text-white">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-[13px] text-slate-400 tracking-wider animate-pulse">
-            Syncing login environment...
+        <div className="min-h-screen flex flex-col items-center justify-center bg-ink font-sans space-y-4 text-paper">
+          <div className="w-8 h-8 border border-wire flex items-center justify-center relative overflow-hidden">
+            <div className="w-2.5 h-2.5 bg-signal animate-pulse" />
+          </div>
+          <p className="text-[12px] text-muted-ink tracking-wider animate-pulse font-mono">
+            SYNCING TELEMETRY NODE ENVIRONMENT...
           </p>
         </div>
       }
