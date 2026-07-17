@@ -14,7 +14,7 @@ test.describe("Authentication Flows", () => {
       });
     });
 
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(page).toHaveURL("/login");
   });
 
@@ -119,8 +119,8 @@ test.describe("Authentication Flows", () => {
     await page.waitForTimeout(2000);
 
     // Should redirect to dashboard home
-    await expect(page).toHaveURL("/");
-    await expect(page.locator("h1")).toContainText("Your Protected Items");
+    await expect(page).toHaveURL("/dashboard");
+    await expect(page.locator("h1")).toContainText("Calibrated Resonance Channels");
     await expect(page.locator("body")).toContainText("user@example.com");
   });
 });
