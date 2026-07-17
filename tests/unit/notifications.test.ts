@@ -117,13 +117,23 @@ describe("Notification Provider", () => {
       text: async () => "OK",
     } as unknown as Response);
 
-    const vResult = await sendVerificationEmail("user@example.com", "http://verify-url");
+    const vResult = await sendVerificationEmail(
+      "user@example.com",
+      "http://verify-url"
+    );
     expect(vResult).toBe(true);
 
-    const rResult = await sendPasswordResetEmail("user@example.com", "http://reset-url");
+    const rResult = await sendPasswordResetEmail(
+      "user@example.com",
+      "http://reset-url"
+    );
     expect(rResult).toBe(true);
 
-    const eResult = await sendAccountEventEmail("user@example.com", "Login Detected", "IP: 1.1.1.1");
+    const eResult = await sendAccountEventEmail(
+      "user@example.com",
+      "Login Detected",
+      "IP: 1.1.1.1"
+    );
     expect(eResult).toBe(true);
 
     expect(global.fetch).toHaveBeenCalledTimes(3);

@@ -44,7 +44,10 @@ export async function requireOwnership(resourceOwnerId: string) {
   const role = await getUserRole();
 
   if (user.id !== resourceOwnerId && role !== "admin") {
-    throw new AuthError(403, "Forbidden: Resource ownership or admin privileges required");
+    throw new AuthError(
+      403,
+      "Forbidden: Resource ownership or admin privileges required"
+    );
   }
   return user;
 }

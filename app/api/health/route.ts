@@ -50,7 +50,7 @@ export async function GET() {
       },
       signal: AbortSignal.timeout(3000), // 3-second timeout
     });
-    
+
     // Status 5xx or network error indicates the service is down/unreachable.
     if (res.status >= 500) {
       healthStatus.services.email = "DOWN";
@@ -62,7 +62,10 @@ export async function GET() {
     healthStatus.status = "DEGRADED";
   }
 
-  if (healthStatus.services.database === "DOWN" && healthStatus.services.email === "DOWN") {
+  if (
+    healthStatus.services.database === "DOWN" &&
+    healthStatus.services.email === "DOWN"
+  ) {
     healthStatus.status = "DOWN";
   }
 

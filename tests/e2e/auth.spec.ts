@@ -18,7 +18,10 @@ test.describe("Authentication Flows", () => {
     await expect(page).toHaveURL("/login");
   });
 
-  test("user can log in successfully and see dashboard", async ({ page, context }) => {
+  test("user can log in successfully and see dashboard", async ({
+    page,
+    context,
+  }) => {
     // Pipe browser runtime errors to terminal using allowed error console method
     page.on("pageerror", (err) => console.error("PAGE ERROR:", err.message));
 
@@ -29,7 +32,8 @@ test.describe("Authentication Flows", () => {
           status: 200,
           headers: {
             "access-control-allow-origin": "*",
-            "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+            "access-control-allow-headers":
+              "authorization, x-client-info, apikey, content-type",
             "access-control-allow-methods": "GET, OPTIONS",
           },
         });
@@ -39,7 +43,8 @@ test.describe("Authentication Flows", () => {
           contentType: "application/json",
           headers: {
             "access-control-allow-origin": "*",
-            "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+            "access-control-allow-headers":
+              "authorization, x-client-info, apikey, content-type",
           },
           body: JSON.stringify({
             id: "user-123",
@@ -58,7 +63,8 @@ test.describe("Authentication Flows", () => {
           status: 200,
           headers: {
             "access-control-allow-origin": "*",
-            "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+            "access-control-allow-headers":
+              "authorization, x-client-info, apikey, content-type",
             "access-control-allow-methods": "POST, OPTIONS",
           },
         });
@@ -68,7 +74,8 @@ test.describe("Authentication Flows", () => {
           contentType: "application/json",
           headers: {
             "access-control-allow-origin": "*",
-            "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+            "access-control-allow-headers":
+              "authorization, x-client-info, apikey, content-type",
           },
           body: JSON.stringify({
             access_token: "mock-token",

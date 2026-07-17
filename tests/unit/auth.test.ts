@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { User } from "@supabase/supabase-js";
-import { requireAuth, requireAdmin, requireOwnership, AuthError } from "../../lib/auth/guards";
+import {
+  requireAuth,
+  requireAdmin,
+  requireOwnership,
+  AuthError,
+} from "../../lib/auth/guards";
 import { getCurrentUser, getUserRole } from "../../lib/auth/session";
 
 // Mock the Supabase server client
@@ -23,11 +28,16 @@ describe("Auth Guards", () => {
       vi.mocked(getCurrentUser).mockResolvedValue(null);
 
       await expect(requireAuth()).rejects.toThrow(AuthError);
-      await expect(requireAuth()).rejects.toThrow("Unauthorized: Authentication required");
+      await expect(requireAuth()).rejects.toThrow(
+        "Unauthorized: Authentication required"
+      );
     });
 
     it("should return user if user is authenticated", async () => {
-      const mockUser = { id: "user-123", email: "user@example.com" } as unknown as User;
+      const mockUser = {
+        id: "user-123",
+        email: "user@example.com",
+      } as unknown as User;
       vi.mocked(getCurrentUser).mockResolvedValue(mockUser);
 
       const result = await requireAuth();
@@ -37,16 +47,24 @@ describe("Auth Guards", () => {
 
   describe("requireAdmin", () => {
     it("should throw 403 error if user is not an admin", async () => {
-      const mockUser = { id: "user-123", email: "user@example.com" } as unknown as User;
+      const mockUser = {
+        id: "user-123",
+        email: "user@example.com",
+      } as unknown as User;
       vi.mocked(getCurrentUser).mockResolvedValue(mockUser);
       vi.mocked(getUserRole).mockResolvedValue("user");
 
       await expect(requireAdmin()).rejects.toThrow(AuthError);
-      await expect(requireAdmin()).rejects.toThrow("Forbidden: Admin privileges required");
+      await expect(requireAdmin()).rejects.toThrow(
+        "Forbidden: Admin privileges required"
+      );
     });
 
     it("should return user if user is an admin", async () => {
-      const mockUser = { id: "admin-123", email: "admin@example.com" } as unknown as User;
+      const mockUser = {
+        id: "admin-123",
+        email: "admin@example.com",
+      } as unknown as User;
       vi.mocked(getCurrentUser).mockResolvedValue(mockUser);
       vi.mocked(getUserRole).mockResolvedValue("admin");
 
@@ -57,7 +75,10 @@ describe("Auth Guards", () => {
 
   describe("requireOwnership", () => {
     it("should succeed if user is the resource owner", async () => {
-      const mockUser = { id: "user-123", email: "user@example.com" } as unknown as User;
+      const mockUser = {
+        id: "user-123",
+        email: "user@example.com",
+      } as unknown as User;
       vi.mocked(getCurrentUser).mockResolvedValue(mockUser);
       vi.mocked(getUserRole).mockResolvedValue("user");
 
@@ -66,7 +87,10 @@ describe("Auth Guards", () => {
     });
 
     it("should succeed if user is not the owner but is an admin", async () => {
-      const mockUser = { id: "admin-123", email: "admin@example.com" } as unknown as User;
+      const mockUser = {
+        id: "admin-123",
+        email: "admin@example.com",
+      } as unknown as User;
       vi.mocked(getCurrentUser).mockResolvedValue(mockUser);
       vi.mocked(getUserRole).mockResolvedValue("admin");
 
@@ -75,12 +99,19 @@ describe("Auth Guards", () => {
     });
 
     it("should throw 403 if user is not the owner and is not an admin", async () => {
-      const mockUser = { id: "user-123", email: "user@example.com" } as unknown as User;
+      const mockUser = {
+        id: "user-123",
+        email: "user@example.com",
+      } as unknown as User;
       vi.mocked(getCurrentUser).mockResolvedValue(mockUser);
       vi.mocked(getUserRole).mockResolvedValue("user");
 
-      await expect(requireOwnership("other-user-456")).rejects.toThrow(AuthError);
-      await expect(requireOwnership("other-user-456")).rejects.toThrow("Forbidden: Resource ownership or admin privileges required");
+      await expect(requireOwnership("other-user-456")).rejects.toThrow(
+        AuthError
+      );
+      await expect(requireOwnership("other-user-456")).rejects.toThrow(
+        "Forbidden: Resource ownership or admin privileges required"
+      );
     });
   });
 });

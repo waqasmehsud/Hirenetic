@@ -11,7 +11,11 @@ interface SendEmailPayload {
  * Sends a transactional email using the Resend REST API.
  * Gracefully stubs execution in development/test modes when API keys are absent.
  */
-export async function sendEmail({ to, subject, html }: SendEmailPayload): Promise<boolean> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+}: SendEmailPayload): Promise<boolean> {
   const apiKey = env.RESEND_API_KEY;
   const from = env.EMAIL_FROM_ADDRESS;
 
@@ -44,7 +48,10 @@ export async function sendEmail({ to, subject, html }: SendEmailPayload): Promis
 
     if (!res.ok) {
       const errorText = await res.text();
-      logger.error(`Failed to send email to ${to} (status: ${res.status})`, new Error(errorText));
+      logger.error(
+        `Failed to send email to ${to} (status: ${res.status})`,
+        new Error(errorText)
+      );
       return false;
     }
 
@@ -59,7 +66,10 @@ export async function sendEmail({ to, subject, html }: SendEmailPayload): Promis
 /**
  * Dispatches an email verification link.
  */
-export async function sendVerificationEmail(to: string, verificationUrl: string) {
+export async function sendVerificationEmail(
+  to: string,
+  verificationUrl: string
+) {
   const subject = "Verify your email address - LLM-SHEILD";
   const html = `
     <h1>Verify your email</h1>
@@ -87,7 +97,11 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string) {
 /**
  * Dispatches a general account security event.
  */
-export async function sendAccountEventEmail(to: string, eventName: string, details: string) {
+export async function sendAccountEventEmail(
+  to: string,
+  eventName: string,
+  details: string
+) {
   const subject = `Account Notification: ${eventName} - LLM-SHEILD`;
   const html = `
     <h1>Security/Account Notification</h1>

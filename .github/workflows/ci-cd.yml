@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript' ] # CodeQL mein JS aur TS dono 'javascript' ke under scan hote hain
+        language: ["javascript"] # CodeQL mein JS aur TS dono 'javascript' ke under scan hote hain
 
     steps:
       - name: Checkout repository

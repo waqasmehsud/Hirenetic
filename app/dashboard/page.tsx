@@ -1,368 +1,430 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useMemo } from "react";
 
-interface Item {
+interface Job {
   id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
+  title: string;
+  company: string;
+  location: string;
+  type: "Remote" | "Hybrid" | "In-Office";
+  minSalary: number;
+  maxSalary: number;
+  score: number;
+  reason: string;
+  skills: string[];
 }
 
+const mockJobs: Job[] = [
+  {
+    id: "job-1",
+    title: "Frontend Design Engineer",
+    company: "Vercel",
+    location: "Remote",
+    type: "Remote",
+    minSalary: 140,
+    maxSalary: 170,
+    score: 94,
+    reason: "Highly aligned with your React/Next.js and high-fidelity interface design experience. Strong match in UI/UX telemetry nodes.",
+    skills: ["React", "Next.js", "Tailwind", "UI/UX"],
+  },
+  {
+    id: "job-2",
+    title: "AI Agent Developer",
+    company: "Cloudflare",
+    location: "SF / Hybrid",
+    type: "Hybrid",
+    minSalary: 160,
+    maxSalary: 190,
+    score: 82,
+    reason: "Strong node match for background queue workers, stateful agents SDK, and Cloudflare Workers runtime capabilities.",
+    skills: ["TypeScript", "AI Agent SDK", "Workers", "Next.js"],
+  },
+  {
+    id: "job-3",
+    title: "Product Engineer",
+    company: "Linear",
+    location: "Remote",
+    type: "Remote",
+    minSalary: 150,
+    maxSalary: 180,
+    score: 89,
+    reason: "Excellent overlap in state management, fast interactions design, and clean Git-integrated workflow architectures.",
+    skills: ["React", "TypeScript", "State Management", "Tailwind"],
+  },
+  {
+    id: "job-4",
+    title: "Senior React Architect",
+    company: "Stripe",
+    location: "NYC / Hybrid",
+    type: "Hybrid",
+    minSalary: 180,
+    maxSalary: 220,
+    score: 76,
+    reason: "Good alignment in payment flow integrations and complex React layouts, but cautions on intensive backend SQL requirements.",
+    skills: ["React", "TypeScript", "SQL", "Web Perf"],
+  },
+  {
+    id: "job-5",
+    title: "Full Stack Developer",
+    company: "Supabase",
+    location: "Remote / Contract",
+    type: "Remote",
+    minSalary: 80,
+    maxSalary: 110,
+    score: 58,
+    reason: "Moderate alignment; requires additional Postgres pgvector and custom RPC database scaling experience.",
+    skills: ["Postgres", "SQL", "Next.js", "TypeScript"],
+  },
+];
+
 export default function DashboardHome() {
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Calibration Control Deck States
+  const [minScore, setMinScore] = useState<number>(60);
+  const [minSalary, setMinSalary] = useState<number>(100);
+  const [locationFilter, setLocationFilter] = useState<string>("ALL");
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [connectionLogs, setConnectionLogs] = useState<string[]>([]);
 
-  // Form states
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editItem, setEditItem] = useState<Item | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
-
-  const triggerRefetch = () => {
-    setRefetchTrigger((prev) => prev + 1);
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadItems = async () => {
-      try {
-        const res = await fetch("/api/v1/items");
-        if (!res.ok) throw new Error("Failed to load items");
-        const data = (await res.json()) as Item[];
-        if (isMounted) {
-          setItems(data);
-        }
-      } catch (err: unknown) {
-        const errorObj = err as { message?: string };
-        if (isMounted) {
-          setError(errorObj.message || "Error loading items");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadItems().catch((err: unknown) => {
-      console.error("Unhandled error in loadItems:", err);
+  // Filtered jobs memo
+  const filteredJobs = useMemo(() => {
+    return mockJobs.filter((job) => {
+      if (job.score < minScore) return false;
+      if (job.maxSalary < minSalary) return false;
+      if (locationFilter !== "ALL" && job.type !== locationFilter) return false;
+      return true;
     });
+  }, [minScore, minSalary, locationFilter]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [refetchTrigger]);
+  // Simulate channel connection
+  const handleConnectChannel = (job: Job) => {
+    setIsConnecting(true);
+    setConnectionLogs([]);
+    setSelectedJob(job);
 
-  const openCreateModal = () => {
-    setEditItem(null);
-    setName("");
-    setDescription("");
-    setError(null);
-    setModalOpen(true);
-  };
+    const logMessages = [
+      `[SYSTEM] Connecting to ${job.company} career endpoint...`,
+      `[SECURE] Synchronizing OAuth scope vectors...`,
+      `[SECURE] Injecting resume telemetry profile...`,
+      `[SUCCESS] Bidirectional channel established with ${job.company}.`,
+      `[INFO] Target resonance match confirmed at ${job.score}%.`,
+      `[READY] Calibration complete. Session logged cryptographically.`,
+    ];
 
-  const openEditModal = (item: Item) => {
-    setEditItem(item);
-    setName(item.name);
-    setDescription(item.description || "");
-    setError(null);
-    setModalOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
-    const url = editItem ? `/api/v1/items/${editItem.id}` : "/api/v1/items";
-    const method = editItem ? "PATCH" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description }),
-      });
-
-      if (!res.ok) {
-        const errData = (await res.json()) as { error: string };
-        throw new Error(errData.error || "Failed to save item");
+    let currentLog = 0;
+    const interval = setInterval(() => {
+      if (currentLog < logMessages.length) {
+        setConnectionLogs((prev) => [...prev, logMessages[currentLog]]);
+        currentLog++;
+      } else {
+        clearInterval(interval);
+        setIsConnecting(false);
       }
-
-      setModalOpen(false);
-      triggerRefetch();
-    } catch (err: unknown) {
-      const errorObj = err as { message?: string };
-      setError(errorObj.message || "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
-
-    try {
-      const res = await fetch(`/api/v1/items/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const errData = (await res.json()) as { error: string };
-        throw new Error(errData.error || "Failed to delete item");
-      }
-
-      triggerRefetch();
-    } catch (err: unknown) {
-      const errorObj = err as { message?: string };
-      alert(errorObj.message || "Error deleting item");
-    }
+    }, 600);
   };
 
   return (
     <div className="space-y-10 text-white font-sans relative">
-      {/* 1. Glassmorphic Header Banner Card */}
+      {/* 1. Dashboard Header */}
       <div className="p-8 bg-slate-900/60 border border-slate-800 rounded-[28px] flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 relative overflow-hidden backdrop-blur-md">
         {/* Colorful gradient glow */}
-        <div className="absolute right-0 top-0 w-96 h-96 bg-gradient-to-tr from-indigo-500 to-purple-500 opacity-20 blur-3xl rounded-full" />
+        <div className="absolute right-0 top-0 w-96 h-96 bg-gradient-to-tr from-[#3ddc97]/30 to-indigo-500/20 opacity-20 blur-3xl rounded-full pointer-events-none" />
 
-        <div className="space-y-4 z-10 max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold uppercase bg-slate-950 border border-slate-800 text-indigo-400 rounded-full tracking-wider font-mono">
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-ping" />
-            Shield Coordinator Nodes
+        <div className="space-y-3 z-10 max-w-3xl">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold uppercase bg-slate-950 border border-slate-800 text-[#3ddc97] rounded-full tracking-wider font-mono">
+            <span className="w-1.5 h-1.5 bg-[#3ddc97] rounded-full animate-ping" />
+            Calibration Telemetry Sweeping
           </span>
           <h2 className="text-3xl font-extrabold tracking-tight leading-tight">
-            Configure guardrail pipelines and inspect incoming prompt metadata.
+            Calibrate your career telemetry signal. Optimize matching resonance.
           </h2>
           <p className="text-[14px] text-slate-400 leading-relaxed">
-            Manage your tenant security configurations, register credential
-            rules, and keep an active log of your AI pipeline protection
-            systems.
+            Monitor real-time semantic matches, configure your signal control deck, and securely connect profile vectors to target company endpoints.
           </p>
-        </div>
-
-        <div className="z-10 shrink-0">
-          <button
-            onClick={openCreateModal}
-            className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer shadow-lg shadow-indigo-550/20"
-          >
-            Configure Node
-          </button>
         </div>
       </div>
 
-      {/* 2. Mini stats grid */}
+      {/* 2. Calibration stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 relative z-10">
         <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-mono">
-            Active Nodes
+            Resonance Channels
           </span>
           <span className="text-2xl font-extrabold text-white mt-1 block">
-            {loading ? "..." : items.length}
+            {filteredJobs.length} active
           </span>
         </div>
         <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-mono">
-            Security Score
+            Avg Resonance
           </span>
-          <span className="text-2xl font-extrabold text-emerald-400 mt-1 block">
-            99.98%
-          </span>
-        </div>
-        <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
-          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-mono">
-            Filters Active
-          </span>
-          <span className="text-2xl font-extrabold text-indigo-400 mt-1 block">
-            12
+          <span className="text-2xl font-extrabold text-[#3ddc97] mt-1 block font-mono">
+            {filteredJobs.length > 0
+              ? `${Math.round(filteredJobs.reduce((acc, curr) => acc + curr.score, 0) / filteredJobs.length)}%`
+              : "0%"}
           </span>
         </div>
         <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-mono">
-            System Latency
+            Source Signal
+          </span>
+          <span className="text-sm font-bold text-indigo-400 mt-2 block truncate">
+            waqas_mehsud_resume.pdf
+          </span>
+        </div>
+        <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest block font-mono">
+            Signal Integrity
           </span>
           <span className="text-2xl font-extrabold text-purple-400 mt-1 block">
-            2.4 ms
+            Optimal (99.8%)
           </span>
         </div>
       </div>
 
-      {/* 3. Main Directory */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800/80 pb-4">
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Protected Infrastructure Nodes
-            </h1>
-            <p className="text-[13px] text-slate-400 mt-1">
-              Active prompt filters, databases context, and safety rules
-              registered in your sandbox environment.
-            </p>
-          </div>
-        </div>
-
-        {/* Loader state */}
-        {loading ? (
-          <div className="flex flex-col justify-center items-center h-64 space-y-4 bg-slate-900/40 border border-slate-850/80 rounded-[24px]">
-            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-[13px] text-slate-400 tracking-wider animate-pulse">
-              Querying infrastructure directory...
-            </p>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-16 bg-slate-900/40 border border-slate-850/80 rounded-[24px] text-center space-y-5">
-            <svg
-              width="32"
-              height="32"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-slate-600"
-            >
-              <path
-                d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 12 12 18 12 22Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+      {/* 3. Main Dashboard Layout (Grid) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        {/* Left Side: Calibration Control Deck & Vector State */}
+        <div className="lg:col-span-4 space-y-6">
+          
+          {/* Signal Control Deck Panel */}
+          <div className="p-6 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-6 backdrop-blur-md">
+            <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3">
+              [ Signal Control Deck ]
+            </h3>
+            
+            {/* Resonance Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-mono">
+                <span className="text-slate-400">MIN RESONANCE:</span>
+                <span className="text-[#3ddc97] font-bold">{minScore}%</span>
+              </div>
+              <input
+                type="range"
+                min="50"
+                max="95"
+                value={minScore}
+                onChange={(e) => setMinScore(Number(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#3ddc97]"
               />
-            </svg>
-            <p className="text-[14px] font-bold text-slate-400 uppercase tracking-wider font-mono">
-              No active nodes found
-            </p>
-            <p className="text-[13px] text-slate-500 max-w-sm">
-              Your network database doesn&apos;t have any guardrails defined yet.
-              Create your first security node below.
-            </p>
-            <button
-              onClick={openCreateModal}
-              className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[13px] rounded-xl transition-all cursor-pointer"
-            >
-              Configure Node
-            </button>
+            </div>
+
+            {/* Salary Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-mono">
+                <span className="text-slate-400">MIN SALARY:</span>
+                <span className="text-[#3ddc97] font-bold">${minSalary}k</span>
+              </div>
+              <input
+                type="range"
+                min="80"
+                max="200"
+                step="10"
+                value={minSalary}
+                onChange={(e) => setMinSalary(Number(e.target.value))}
+                className="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-[#3ddc97]"
+              />
+            </div>
+
+            {/* Location Checkboxes */}
+            <div className="space-y-2">
+              <span className="block text-xs font-mono text-slate-400">LOCATION TELEMETRY:</span>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {["ALL", "Remote", "Hybrid", "In-Office"].map((loc) => (
+                  <button
+                    key={loc}
+                    onClick={() => setLocationFilter(loc)}
+                    className={`px-3 py-1.5 font-mono text-[10px] uppercase font-bold border rounded-lg transition-all ${
+                      locationFilter === loc
+                        ? "bg-[#3ddc97] border-[#3ddc97] text-slate-950 shadow-md shadow-[#3ddc97]/25"
+                        : "border-slate-800 bg-slate-950/40 text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    {loc}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-        ) : (
-          /* Grid of Nodes */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="bg-slate-900/50 border border-slate-850/80 rounded-[24px] p-6 flex flex-col justify-between h-64 hover:border-indigo-500/50 transition-all shadow-md hover:shadow-indigo-500/5"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-850/60 pb-3 mb-4">
-                    <span className="text-[11px] font-mono text-slate-500 font-semibold">
-                      ID: {item.id.substring(0, 8).toUpperCase()}...
-                    </span>
-                    <span className="px-2.5 py-0.5 text-[10px] font-bold border border-emerald-950/40 bg-emerald-950/20 text-emerald-400 rounded-full uppercase tracking-wider font-mono">
-                      Safe Node
-                    </span>
-                  </div>
-                  <h3 className="text-[16px] font-bold text-white truncate">
-                    {item.name}
-                  </h3>
-                  <p className="text-slate-400 text-[13px] mt-2 line-clamp-3 leading-relaxed">
-                    {item.description ||
-                      "No description payload registered for this node."}
-                  </p>
-                </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-850/60 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-500 font-semibold font-mono">
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </span>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(item)}
-                      className="px-3 py-1.5 border border-slate-800 hover:border-slate-700 bg-slate-950/40 hover:bg-slate-950 text-slate-300 rounded-lg text-[12px] font-bold transition-all cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="px-3 py-1.5 border border-slate-800 hover:border-rose-900/60 hover:text-rose-400 bg-slate-950/40 hover:bg-rose-955/20 rounded-lg text-[12px] font-bold transition-all cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </div>
+          {/* Source Vector State Panel */}
+          <div className="p-6 bg-slate-900/40 border border-slate-800 rounded-2xl space-y-4 backdrop-blur-md">
+            <h3 className="text-sm font-bold font-mono uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3">
+              [ Resume Vector State ]
+            </h3>
+            <div className="space-y-3 font-mono text-[11px]">
+              <div>
+                <span className="text-slate-500 block mb-1">DETAILED VECTORS:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {["React", "Next.js", "TypeScript", "AI Agent SDK", "Tailwind", "Postgres", "SQL"].map((s) => (
+                    <span key={s} className="px-2 py-0.5 border border-slate-800 bg-slate-950/50 rounded text-slate-300">
+                      {s}
+                    </span>
+                  ))}
                 </div>
               </div>
-            ))}
+              <div>
+                <span className="text-slate-500 block mb-1">TARGET ROLES:</span>
+                <p className="text-slate-300 font-sans leading-relaxed">
+                  Frontend Design Eng, AI Agent Dev, Full Stack Developer
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+
+        </div>
+
+        {/* Right Side: Matched Job Channels */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">
+                Calibrated Resonance Channels
+              </h1>
+              <p className="text-[13px] text-slate-400 mt-1">
+                Real-time job matching portals within the current configuration threshold limits.
+              </p>
+            </div>
+          </div>
+
+          {/* If no jobs matched */}
+          {filteredJobs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-16 bg-slate-900/40 border border-slate-850/80 rounded-[24px] text-center space-y-5">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-slate-600 animate-pulse"
+              >
+                <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 12 12 18 12 22Z" />
+              </svg>
+              <p className="text-[14px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                No Resonance Channels Found
+              </p>
+              <p className="text-[13px] text-slate-500 max-w-sm">
+                Adjust your calibration deck (lower resonance threshold or salary limits) to lock onto active channels.
+              </p>
+            </div>
+          ) : (
+            /* Grid of matched jobs */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="bg-slate-900/50 border border-slate-850/80 rounded-[24px] p-6 flex flex-col justify-between hover:border-[#3ddc97]/50 transition-all shadow-md group relative overflow-hidden"
+                >
+                  <div>
+                    {/* Header: Company, Location and Resonance score */}
+                    <div className="flex items-start justify-between gap-2 border-b border-slate-850/60 pb-3 mb-4">
+                      <div>
+                        <h4 className="font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                          {job.company} — {job.location}
+                        </h4>
+                        <span className="inline-block mt-1 px-2 py-0.5 border border-slate-800 bg-slate-950/40 text-slate-400 font-mono text-[9px] uppercase font-bold rounded">
+                          {job.type}
+                        </span>
+                      </div>
+                      <div className="font-mono text-[11px] flex items-center gap-1.5 bg-slate-950 px-2 py-1 border border-slate-800 rounded">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#3ddc97]" />
+                        <span className="text-[#3ddc97] font-extrabold">{job.score}%</span>
+                      </div>
+                    </div>
+
+                    <h3 className="text-[16px] font-bold text-white group-hover:text-[#3ddc97] transition-colors leading-snug">
+                      {job.title}
+                    </h3>
+                    <p className="text-slate-400 text-[12px] mt-3 leading-relaxed">
+                      {job.reason}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1 mt-4">
+                      {job.skills.map((skill) => (
+                        <span key={skill} className="px-1.5 py-0.5 text-[9px] font-mono border border-slate-850 bg-slate-950/30 text-slate-400 rounded">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-slate-850/60 flex items-center justify-between">
+                    <span className="text-[12px] text-[#3ddc97] font-semibold font-mono">
+                      ${job.minSalary}k – ${job.maxSalary}k
+                    </span>
+
+                    <button
+                      onClick={() => handleConnectChannel(job)}
+                      className="px-3.5 py-2 bg-slate-950 hover:bg-[#3ddc97] text-slate-300 hover:text-slate-950 border border-slate-800 hover:border-[#3ddc97] rounded-xl text-[11px] font-mono uppercase font-extrabold transition-all cursor-pointer shadow-sm active:scale-95"
+                    >
+                      Connect Channel
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
 
-      {/* 4. CRUD Modal */}
-      {modalOpen && (
+      {/* 4. Connection Terminal Log (Modal) */}
+      {selectedJob && (isConnecting || connectionLogs.length > 0) && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/85 backdrop-blur-sm px-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-[24px] p-8 max-w-md w-full space-y-6 relative shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-white">
-            <h2 className="text-lg font-bold border-b border-slate-800/80 pb-3">
-              {editItem
-                ? "Edit Infrastructure Node"
-                : "Configure Infrastructure Node"}
-            </h2>
+          <div className="bg-slate-950 border border-slate-850 rounded-[24px] p-6 max-w-lg w-full space-y-4 relative shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-white font-mono text-[12px]">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <span className="text-xs font-bold text-indigo-400">
+                CONNECTION_TELEMETRY // {selectedJob.company.toUpperCase()}_GATEWAY
+              </span>
+              {!isConnecting && (
+                <button
+                  onClick={() => {
+                    setSelectedJob(null);
+                    setConnectionLogs([]);
+                  }}
+                  className="text-slate-500 hover:text-white transition-colors"
+                >
+                  [ CLOSE ]
+                </button>
+              )}
+            </div>
 
-            {error && (
-              <div className="p-3 bg-rose-950/40 border border-rose-800 text-rose-355 text-[13px] rounded-xl text-center">
-                Error: {error}
+            <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-2 min-h-48 max-h-64 overflow-y-auto custom-scrollbar text-slate-300">
+              {connectionLogs.map((log, index) => (
+                <div key={index} className="leading-relaxed pl-2 border-l border-[#3ddc97]">
+                  {log}
+                </div>
+              ))}
+              {isConnecting && (
+                <div className="text-[#3ddc97] animate-pulse flex items-center gap-1.5 pl-2">
+                  <span className="w-1.5 h-1.5 bg-[#3ddc97] rounded-full" />
+                  <span>Synchronizing...</span>
+                </div>
+              )}
+            </div>
+
+            {!isConnecting && (
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => {
+                    setSelectedJob(null);
+                    setConnectionLogs([]);
+                  }}
+                  className="px-5 py-2.5 bg-[#3ddc97] hover:bg-emerald-400 text-slate-950 font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer font-sans text-xs"
+                >
+                  Channel Operational
+                </button>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider font-mono">
-                    Node Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter configuration name"
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all font-mono"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider font-mono">
-                    Configuration Payload / Description
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide config rules or security constraints..."
-                    className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-[13px] text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-all h-28 resize-none font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 justify-end pt-4 border-t border-slate-800/80">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2.5 border border-slate-800 bg-slate-950 hover:bg-slate-950/80 rounded-xl text-[13px] font-bold transition-all cursor-pointer text-slate-300"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[13px] rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {submitting ? "Saving node..." : "Save Configuration"}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }

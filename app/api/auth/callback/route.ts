@@ -24,9 +24,13 @@ export async function GET(request: Request) {
         }
       }
     } catch {
-      return NextResponse.redirect(`${origin}/login?error=Authentication exception`);
+      return NextResponse.redirect(
+        `${origin}/login?error=Authentication exception`
+      );
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=Could not exchange auth code`);
+  return NextResponse.redirect(
+    `${origin}/login?error=Could not exchange auth code`
+  );
 }

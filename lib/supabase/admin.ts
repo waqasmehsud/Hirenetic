@@ -3,7 +3,9 @@ import { env } from "@/lib/env";
 
 export function createAdminSupabaseClient() {
   if (typeof window !== "undefined") {
-    throw new Error("createAdminSupabaseClient can only be called on the server");
+    throw new Error(
+      "createAdminSupabaseClient can only be called on the server"
+    );
   }
 
   return createClient(

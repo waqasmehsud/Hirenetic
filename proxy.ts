@@ -3,6 +3,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // 0. Early-exit for public and ignored routes (no Supabase call needed)
+  const isPublicRoute = path === "/";
+  const isIgnoredRoute =
+    path.startsWith("/_next") ||
+    path.startsWith("/api/health") ||
+    path.startsWith("/api/auth/callback") ||
+    path.includes(".") ||
+    path === "/favicon.ico";
+
+  if (isIgnoredRoute || isPublicRoute) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -16,7 +31,9 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
           supabaseResponse = NextResponse.next({
             request,
           });
@@ -52,33 +69,20 @@ export async function proxy(request: NextRequest) {
     user = supabaseUser;
   }
 
-  const path = request.nextUrl.pathname;
-
   // 1. Define Route Matchers
   const isAuthRoute =
     path.startsWith("/login") ||
     path.startsWith("/signup") ||
     path.startsWith("/reset-password");
   const isAdminRoute =
-    path.startsWith("/admin") ||
+    path.startsWith("/dashboard/admin") ||
     path.startsWith("/api/dashboard/admin");
-
-  const isIgnoredRoute =
-    path.startsWith("/_next") ||
-    path.startsWith("/api/health") ||
-    path.startsWith("/api/auth/callback") ||
-    path.includes(".") ||
-    path === "/favicon.ico";
-
-  if (isIgnoredRoute) {
-    return supabaseResponse;
-  }
 
   // 2. Protect Routes
   if (user) {
     // Authenticated user trying to access public auth pages (login/signup/reset-password)
     if (isAuthRoute) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
     // Role-gating for admin routes
@@ -91,7 +95,7 @@ export async function proxy(request: NextRequest) {
             { status: 403 }
           );
         }
-        return NextResponse.redirect(new URL("/", request.url));
+        return NextResponse.redirect(new URL("/dashboard", request.url));
       }
     }
   } else {

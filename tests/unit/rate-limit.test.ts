@@ -113,7 +113,8 @@ describe("rateLimit", () => {
     let fetchSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      (env as Record<string, string>).UPSTASH_REDIS_REST_URL = "https://fake-redis.upstash.io";
+      (env as Record<string, string>).UPSTASH_REDIS_REST_URL =
+        "https://fake-redis.upstash.io";
       (env as Record<string, string>).UPSTASH_REDIS_REST_TOKEN = "fake-token";
       fetchSpy = vi.spyOn(globalThis, "fetch");
     });
@@ -135,7 +136,9 @@ describe("rateLimit", () => {
       const [url, options] = fetchSpy.mock.calls[0] as [string, RequestInit];
       expect(url).toBe("https://fake-redis.upstash.io/pipeline");
       expect(options.method).toBe("POST");
-      expect((options.headers as Record<string, string>).Authorization).toBe("Bearer fake-token");
+      expect((options.headers as Record<string, string>).Authorization).toBe(
+        "Bearer fake-token"
+      );
     });
 
     it("returns success when count is under the limit", async () => {

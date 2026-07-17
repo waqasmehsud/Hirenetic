@@ -1,6 +1,6 @@
 # Security
 
-This document is the operational companion to `architecture.md` §4. Where that document explains the *design*, this one is the checklist and implementation guidance developers use day to day.
+This document is the operational companion to `architecture.md` §4. Where that document explains the _design_, this one is the checklist and implementation guidance developers use day to day.
 
 ## 1. Baseline Standard
 
@@ -18,7 +18,7 @@ Target: **OWASP ASVS Level 2**, appropriate for an application handling authenti
 Two layers, both required, neither sufficient alone:
 
 1. **`proxy.ts`** — authenticates the request (valid session or not) and does coarse route protection (e.g., anything under `(dashboard)/admin` requires `role = admin`).
-2. **Route Handler + RLS** — the handler checks fine-grained ownership/authorization ("is this user allowed to modify *this specific* record?"), and the database's RLS policy enforces the same rule independently, using the user's own JWT via the request-scoped Supabase client (never the service-role client for user-triggered actions).
+2. **Route Handler + RLS** — the handler checks fine-grained ownership/authorization ("is this user allowed to modify _this specific_ record?"), and the database's RLS policy enforces the same rule independently, using the user's own JWT via the request-scoped Supabase client (never the service-role client for user-triggered actions).
 
 **Rule:** if you find yourself using `lib/supabase/admin.ts` (service-role, RLS-bypassing) inside a Route Handler that takes user input, stop — that's very likely a bug, not a feature. Service-role access is reserved for trusted, non-request-triggered contexts (scheduled jobs, admin-triggered bulk ops with their own explicit authorization check).
 

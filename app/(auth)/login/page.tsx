@@ -86,8 +86,8 @@ function LoginForm() {
                 />
               </svg>
             </div>
-            <span className="font-extrabold text-lg bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-              LLM Shield
+            <span className="font-extrabold text-lg bg-gradient-to-r from-[#3ddc97] to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+              HIRENETIC
             </span>
           </Link>
 
@@ -98,7 +98,7 @@ function LoginForm() {
                 Sign In
               </h1>
               <p className="text-[13px] text-slate-400">
-                Access your compliance operations console node.
+                Access your career calibration console node.
               </p>
             </div>
 
@@ -165,7 +165,7 @@ function LoginForm() {
                 disabled={loading}
                 className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg shadow-indigo-550/20"
               >
-                {loading ? "Establishing connection..." : "Connect Session"}
+                {loading ? "Synchronizing session..." : "Initialize Session"}
               </button>
             </form>
 
@@ -215,19 +215,19 @@ function LoginForm() {
 
             <div className="flex justify-end">
               <span className="text-[9px] uppercase tracking-widest font-mono bg-indigo-950 border border-indigo-800/60 text-indigo-400 px-2.5 py-0.5 rounded-full">
-                active-guard-2.0
+                hirenetic-telemetry
               </span>
             </div>
 
             <div className="space-y-4 relative z-10">
               <div className="text-emerald-400 font-mono text-[11px] animate-pulse">
-                {"// SHIELD CONNECTED"}
+                {"// RESONANCE SYNCED"}
               </div>
               <h3 className="text-xl font-bold leading-snug">
-                Cryptographic protection for compliance audit nodes.
+                Calibrate your career signal to job resonance.
               </h3>
               <p className="text-[12px] text-slate-400 leading-relaxed">
-                Log, filter, and inspect downstream responses securely.
+                Upload your resume, parse structural skill vectors, and watch matching channels synchronize.
               </p>
             </div>
 

@@ -4,7 +4,7 @@ const securityHeaders = [
   {
     key: "Content-Security-Policy",
     value:
-      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; font-src 'self' data:; frame-ancestors 'none'; upgrade-insecure-requests;",
+      "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:* ws://127.0.0.1:* http://127.0.0.1:*; font-src 'self' data: https://fonts.gstatic.com; frame-ancestors 'none'; upgrade-insecure-requests;",
   },
   {
     key: "X-Frame-Options",

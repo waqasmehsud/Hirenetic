@@ -9,6 +9,7 @@ This document describes the step-by-step procedure for rolling back application 
 Vercel keeps immutable builds for every deployment, making application-level rollbacks fast and low-risk.
 
 ### Option A: Vercel Dashboard (Instant Revert)
+
 1. Go to the [Vercel Dashboard](https://vercel.com/) and navigate to the project dashboard (`llm-shield`).
 2. Click on the **Deployments** tab.
 3. Find the last known stable deployment (the deployment immediately preceding the problematic release).
@@ -17,7 +18,9 @@ Vercel keeps immutable builds for every deployment, making application-level rol
 6. Confirm the promotion. Vercel will instantly shift traffic to the selected build without rebuilding it.
 
 ### Option B: Vercel CLI Rollback
+
 If you have the Vercel CLI configured locally or want to automate rollbacks via scripts:
+
 ```bash
 # 1. List recent deployments to find the target deployment ID
 vercel list
@@ -33,10 +36,12 @@ vercel rollback <deployment-id>
 Database rollbacks require careful coordination because database schema changes cannot always be undone instantly without risking data loss.
 
 ### General Policies
-*   **Additive-Only Changes (Preferred):** Whenever possible, migrations should be backward-compatible (e.g., adding nullable columns, creating new tables). Destructive changes (e.g., dropping columns/tables) should only be executed in a separate, later release after all code paths referencing them have been deleted and deployed.
-*   **Manual Backups:** For any release containing critical database migrations, generate a manual database backup in the Supabase Dashboard prior to the release window.
+
+- **Additive-Only Changes (Preferred):** Whenever possible, migrations should be backward-compatible (e.g., adding nullable columns, creating new tables). Destructive changes (e.g., dropping columns/tables) should only be executed in a separate, later release after all code paths referencing them have been deleted and deployed.
+- **Manual Backups:** For any release containing critical database migrations, generate a manual database backup in the Supabase Dashboard prior to the release window.
 
 ### Rollback Strategy A: Revert Migration (Roll-Forward / Additive Revert)
+
 The safest way to revert a schema change in a live database is to generate a new migration file that cancels out the previous migration. This maintains a clean sequential migration history.
 
 1.  **Locate the bad migration:** Find the file under `supabase/migrations/<timestamp>_bad_migration.sql`.
@@ -45,24 +50,25 @@ The safest way to revert a schema change in a live database is to generate a new
     supabase migration new rollback_of_<timestamp>
     ```
 3.  **Write the inverse operations:** Open the newly created file in `supabase/migrations/` and write the SQL statements to revert the bad schema changes.
-    *   *Example:* If the bad migration did:
-        ```sql
-        ALTER TABLE public.items ADD COLUMN priority text;
-        ```
-    *   *The rollback migration should do:*
-        ```sql
-        ALTER TABLE public.items DROP COLUMN IF EXISTS priority;
-        ```
+    - _Example:_ If the bad migration did:
+      ```sql
+      ALTER TABLE public.items ADD COLUMN priority text;
+      ```
+    - _The rollback migration should do:_
+      ```sql
+      ALTER TABLE public.items DROP COLUMN IF EXISTS priority;
+      ```
 4.  **Push the revert migration:**
     ```bash
     # Apply to Staging
     supabase db push --project-ref <staging-project-ref>
-    
+
     # Apply to Production (or let CI apply it on merge to main)
     supabase db push --project-ref <production-project-ref>
     ```
 
 ### Rollback Strategy B: Database State Recovery (Supabase PITR)
+
 For severe database corruption or migration failures that cannot be resolved through SQL changes:
 
 1.  Log in to the **Supabase Dashboard**.
@@ -78,6 +84,7 @@ For severe database corruption or migration failures that cannot be resolved thr
 To satisfy the pre-launch exit criteria, a controlled rollback must be successfully performed in the Staging environment:
 
 ### Step 1: Deploy a Test Migration and Code
+
 1.  Create a temporary branch:
     ```bash
     git checkout -b test/rollback-dry-run
@@ -94,6 +101,7 @@ To satisfy the pre-launch exit criteria, a controlled rollback must be successfu
 4.  Verify in the database that `temp_flag` column is present on `public.items`.
 
 ### Step 2: Simulate Rollback
+
 1.  **Application Rollback:** Revert Vercel Staging to the prior deployment using the Vercel Dashboard (click **Promote to Production** on the previous stable build).
 2.  **Database Rollback:** Apply a revert migration that drops the `temp_flag` column:
     ```bash
@@ -113,8 +121,8 @@ To satisfy the pre-launch exit criteria, a controlled rollback must be successfu
 To detect issues early and trigger a rollback before users are severely impacted, set up the following monitoring checks:
 
 1.  **Health Check Alerting:** Set up an external uptime checker (e.g., Better Uptime, Pingdom, or Cloudflare Health Checks) pointing at `/api/health`.
-    *   **Interval:** Every 1 minute.
-    *   **Failure Condition:** Raise a high-priority incident (P1) if status is `DEGRADED` (returns 200 but nested services are DOWN) or `DOWN` (returns 503).
+    - **Interval:** Every 1 minute.
+    - **Failure Condition:** Raise a high-priority incident (P1) if status is `DEGRADED` (returns 200 but nested services are DOWN) or `DOWN` (returns 503).
 2.  **Error Rate Alerting:** Monitor Vercel logs or Sentry error metrics.
-    *   **Trigger:** Error rate exceeds 2% of total traffic over a 5-minute window.
-    *   **Action:** Alert the on-call engineer to review the latest deployment and prepare a rollback if the spike coincides with a release.
+    - **Trigger:** Error rate exceeds 2% of total traffic over a 5-minute window.
+    - **Action:** Alert the on-call engineer to review the latest deployment and prepare a rollback if the spike coincides with a release.

@@ -20,14 +20,21 @@ describe("logger", () => {
     vi.stubEnv("NODE_ENV", "development");
 
     logger.info("info message", { userId: "123" });
-    expect(console.log).toHaveBeenCalledWith("[INFO] info message", '{"userId":"123"}');
+    expect(console.log).toHaveBeenCalledWith(
+      "[INFO] info message",
+      '{"userId":"123"}'
+    );
 
     logger.warn("warning message");
     expect(console.warn).toHaveBeenCalledWith("[WARN] warning message", "");
 
     const testError = new Error("test error");
     logger.error("error message", testError, { action: "test" });
-    expect(console.error).toHaveBeenCalledWith("[ERROR] error message", testError.stack || testError.message, '{"action":"test"}');
+    expect(console.error).toHaveBeenCalledWith(
+      "[ERROR] error message",
+      testError.stack || testError.message,
+      '{"action":"test"}'
+    );
 
     logger.debug("debug message");
     expect(console.debug).toHaveBeenCalledWith("[DEBUG] debug message", "");

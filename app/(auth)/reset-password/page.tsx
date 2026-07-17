@@ -133,8 +133,8 @@ function ResetPasswordForm() {
                 />
               </svg>
             </div>
-            <span className="font-extrabold text-lg bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-              LLM Shield
+            <span className="font-extrabold text-lg bg-gradient-to-r from-[#3ddc97] to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+              HIRENETIC
             </span>
           </Link>
 
@@ -142,7 +142,7 @@ function ResetPasswordForm() {
           <div className="my-6 space-y-6">
             <div className="space-y-1">
               <h1 className="text-3xl font-extrabold text-white tracking-tight">
-                {isRecovery ? "Update Password" : "Recover Key"}
+                {isRecovery ? "Update Password" : "Recover Session"}
               </h1>
               <p className="text-[13px] text-slate-400">
                 {isRecovery
@@ -172,7 +172,7 @@ function ResetPasswordForm() {
                       htmlFor="password"
                       className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
                     >
-                      New Password Key
+                      New Password
                     </label>
                     <input
                       id="password"
@@ -192,7 +192,7 @@ function ResetPasswordForm() {
                       htmlFor="confirmPassword"
                       className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
                     >
-                      Confirm New Key
+                      Confirm New Password
                     </label>
                     <input
                       id="confirmPassword"
@@ -272,24 +272,24 @@ function ResetPasswordForm() {
 
             <div className="flex justify-end">
               <span className="text-[9px] uppercase tracking-widest font-mono bg-indigo-950 border border-indigo-800/60 text-indigo-400 px-2.5 py-0.5 rounded-full">
-                active-guard-2.0
+                hirenetic-telemetry
               </span>
             </div>
 
             <div className="space-y-4 relative z-10">
               <div className="text-emerald-400 font-mono text-[11px] animate-pulse">
-                {"// CRYPTO ENGINE READY"}
+                {"// CALIBRATION ENGINE READY"}
               </div>
               <h3 className="text-xl font-bold leading-snug">
-                Securing compliance and PII data streams.
+                Recover your career resonance dashboard.
               </h3>
               <p className="text-[12px] text-slate-400 leading-relaxed">
-                Protect your pipeline records from credentials loss.
+                Reset your access password to resume matching.
               </p>
             </div>
 
             <div className="text-[11px] text-slate-600 font-mono">
-              Strict node policies.
+              Calibration sweeps logged.
             </div>
           </div>
         </div>

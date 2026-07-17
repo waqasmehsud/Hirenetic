@@ -16,18 +16,18 @@
 
 ### Color Palette
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#00FF41` | `--color-primary` |
-| On Primary | `#0F172A` | `--color-on-primary` |
-| Secondary | `#0D0D0D` | `--color-secondary` |
-| Accent/CTA | `#FF3333` | `--color-accent` |
-| Background | `#000000` | `--color-background` |
-| Foreground | `#E0E0E0` | `--color-foreground` |
-| Muted | `#181818` | `--color-muted` |
-| Border | `#1F1F1F` | `--color-border` |
+| Role        | Hex       | CSS Variable          |
+| ----------- | --------- | --------------------- |
+| Primary     | `#00FF41` | `--color-primary`     |
+| On Primary  | `#0F172A` | `--color-on-primary`  |
+| Secondary   | `#0D0D0D` | `--color-secondary`   |
+| Accent/CTA  | `#FF3333` | `--color-accent`      |
+| Background  | `#000000` | `--color-background`  |
+| Foreground  | `#E0E0E0` | `--color-foreground`  |
+| Muted       | `#181818` | `--color-muted`       |
+| Border      | `#1F1F1F` | `--color-border`      |
 | Destructive | `#EF4444` | `--color-destructive` |
-| Ring | `#00FF41` | `--color-ring` |
+| Ring        | `#00FF41` | `--color-ring`        |
 
 **Color Notes:** Matrix green + alert red
 
@@ -39,29 +39,30 @@
 - **Google Fonts:** [Fira Code + Fira Sans](https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap)
 
 **CSS Import:**
+
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap");
 ```
 
 ### Spacing Variables
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
+| Token         | Value             | Usage                     |
+| ------------- | ----------------- | ------------------------- |
+| `--space-xs`  | `4px` / `0.25rem` | Tight gaps                |
+| `--space-sm`  | `8px` / `0.5rem`  | Icon gaps, inline spacing |
+| `--space-md`  | `16px` / `1rem`   | Standard padding          |
+| `--space-lg`  | `24px` / `1.5rem` | Section padding           |
+| `--space-xl`  | `32px` / `2rem`   | Large gaps                |
+| `--space-2xl` | `48px` / `3rem`   | Section margins           |
+| `--space-3xl` | `64px` / `4rem`   | Hero padding              |
 
 ### Shadow Depths
 
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
+| Level         | Value                          | Usage                       |
+| ------------- | ------------------------------ | --------------------------- |
+| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)`   | Subtle lift                 |
+| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)`    | Cards, buttons              |
+| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)`  | Modals, dropdowns           |
 | `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
 
 ---
@@ -73,7 +74,7 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #FF3333;
+  background: #ff3333;
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -90,8 +91,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #00FF41;
-  border: 2px solid #00FF41;
+  color: #00ff41;
+  border: 2px solid #00ff41;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -123,16 +124,16 @@
 ```css
 .input {
   padding: 12px 16px;
-  border: 1px solid #E2E8F0;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   font-size: 16px;
   transition: border-color 200ms ease;
 }
 
 .input:focus {
-  border-color: #00FF41;
+  border-color: #00ff41;
   outline: none;
-  box-shadow: 0 0 0 3px #00FF4120;
+  box-shadow: 0 0 0 3px #00ff4120;
 }
 ```
 

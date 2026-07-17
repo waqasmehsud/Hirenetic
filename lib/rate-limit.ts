@@ -24,8 +24,7 @@ export async function rateLimit(
   const url = env.UPSTASH_REDIS_REST_URL;
   const token = env.UPSTASH_REDIS_REST_TOKEN;
 
-  const isUpstashConfigured =
-    url && url !== "" && token && token !== "";
+  const isUpstashConfigured = url && url !== "" && token && token !== "";
 
   if (!isUpstashConfigured) {
     const now = Math.floor(Date.now() / 1000);
@@ -34,7 +33,12 @@ export async function rateLimit(
 
     if (!record || now > record.expires) {
       localCache.set(key, { count: 1, expires: now + windowSeconds });
-      return { success: true, limit, remaining: limit - 1, reset: now + windowSeconds };
+      return {
+        success: true,
+        limit,
+        remaining: limit - 1,
+        reset: now + windowSeconds,
+      };
     }
 
     if (record.count >= limit) {
@@ -42,7 +46,12 @@ export async function rateLimit(
     }
 
     record.count += 1;
-    return { success: true, limit, remaining: limit - record.count, reset: record.expires };
+    return {
+      success: true,
+      limit,
+      remaining: limit - record.count,
+      reset: record.expires,
+    };
   }
 
   try {
@@ -64,8 +73,15 @@ export async function rateLimit(
 
     if (!res.ok) {
       const errText = await res.text();
-      logger.error(`Upstash Redis rate limiter request failed: ${res.status} - ${errText}`);
-      return { success: true, limit, remaining: limit - 1, reset: Math.floor(now / 1000) + windowSeconds };
+      logger.error(
+        `Upstash Redis rate limiter request failed: ${res.status} - ${errText}`
+      );
+      return {
+        success: true,
+        limit,
+        remaining: limit - 1,
+        reset: Math.floor(now / 1000) + windowSeconds,
+      };
     }
 
     const data = (await res.json()) as Array<{ result: number }>;
@@ -79,6 +95,11 @@ export async function rateLimit(
     };
   } catch (err) {
     logger.error("Rate limiter exception", err);
-    return { success: true, limit, remaining: limit - 1, reset: Math.floor(Date.now() / 1000) + windowSeconds };
+    return {
+      success: true,
+      limit,
+      remaining: limit - 1,
+      reset: Math.floor(Date.now() / 1000) + windowSeconds,
+    };
   }
 }

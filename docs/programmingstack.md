@@ -5,6 +5,7 @@ Every choice below is justified against `objectives.md` and `requirements.md` �
 ## 1. Frontend Framework — Next.js 14+ (App Router, TypeScript)
 
 **Why:**
+
 - Server Components + Route Handlers let the frontend and API layer live in one deployable unit, which directly supports NFR-12 (stateless, serverless-friendly) and simplifies the CI/CD story (one build, one deploy target).
 - File-system routing maps cleanly onto the "feature module" extensibility pattern (`objectives.md` §4.2): a new route is a new folder, not a new registration step somewhere else.
 - First-class Vercel support means zero-config deployment, preview URLs per PR, and edge/serverless runtime selection per route — directly supports the deployment requirements.
@@ -31,6 +32,7 @@ Every choice below is justified against `objectives.md` and `requirements.md` �
 ## 5. Database — Supabase (managed Postgres)
 
 **Why:**
+
 - Postgres is a mature, ACID-compliant relational database — the right default for an application with relational data (users, roles, ownership) and where data integrity matters more than eventual-consistency flexibility.
 - Supabase adds Auth, Storage, Realtime, and RLS enforcement on top of vanilla Postgres, which is precisely the "defense in depth" authorization model in `architecture.md` §4.2 — RLS support at the database layer isn't bolted on, it's native to the platform.
 - Free tier is genuinely usable for development and early production (per objectives §2.3), with a clear upgrade path (Pro tier) that doesn't require migrating databases.
@@ -41,6 +43,7 @@ Every choice below is justified against `objectives.md` and `requirements.md` �
 ## 6. ORM / Query Layer — Supabase JS Client + Drizzle ORM (for typed queries beyond simple CRUD)
 
 **Why:**
+
 - For straightforward CRUD, the official `@supabase/supabase-js` client (paired with `@supabase/ssr` for server-side session handling) is used directly — it respects the user's JWT and therefore RLS, which a generic ORM's connection pool often does not by default.
 - For more complex queries (joins, aggregations) where hand-written Supabase client chains get unwieldy, **Drizzle ORM** is used in a typed, edge-runtime-compatible way (unlike Prisma, which historically needed a Node.js runtime and a heavier client, complicating edge deployment).
 - Drizzle's schema-as-code approach also gives us a single TypeScript source of truth for table shapes that can generate/validate against the SQL migrations, tightening the loop between migration files and application types.
@@ -58,6 +61,7 @@ Every choice below is justified against `objectives.md` and `requirements.md` �
 ## 9. Email API — Resend (primary), free/developer tier
 
 **Why:**
+
 - Resend's free tier (as of this writing) is generous enough for a pre-revenue product's transactional volume, has a clean API, and — notably — has official React Email support, letting transactional email templates be built as React components, consistent with the rest of the stack.
 - Decoupled behind `lib/notifications/` (per `architecture.md` §5.2), so if Resend's limits or terms stop fitting the project, swapping to SendGrid or Mailgun's free tiers touches one module.
 
@@ -79,17 +83,17 @@ Every choice below is justified against `objectives.md` and `requirements.md` �
 
 ## 13. Summary Table
 
-| Layer | Choice | Key Alternative |
-|---|---|---|
-| Frontend framework | Next.js 14+ (App Router, TS) | Remix |
-| Styling | Tailwind CSS + Radix primitives | Chakra/Mantine |
-| Backend runtime | Vercel Serverless/Edge Functions | Dedicated Node server |
-| Database | Supabase (Postgres) | PlanetScale, self-hosted Postgres |
-| ORM/query | Supabase JS client + Drizzle | Prisma |
-| Validation | Zod | Yup, io-ts |
-| Auth | Supabase Auth | Auth0, Clerk |
-| Email | Resend (free tier) | SendGrid, Mailgun (free tiers) |
-| Containerization | Docker Compose (dev/CI only) | Vagrant, bare local installs |
-| CI | GitHub Actions | CircleCI, GitLab CI |
-| Hosting | Vercel | Netlify, self-hosted |
-| Testing | Vitest + Playwright | Jest + Cypress |
+| Layer              | Choice                           | Key Alternative                   |
+| ------------------ | -------------------------------- | --------------------------------- |
+| Frontend framework | Next.js 14+ (App Router, TS)     | Remix                             |
+| Styling            | Tailwind CSS + Radix primitives  | Chakra/Mantine                    |
+| Backend runtime    | Vercel Serverless/Edge Functions | Dedicated Node server             |
+| Database           | Supabase (Postgres)              | PlanetScale, self-hosted Postgres |
+| ORM/query          | Supabase JS client + Drizzle     | Prisma                            |
+| Validation         | Zod                              | Yup, io-ts                        |
+| Auth               | Supabase Auth                    | Auth0, Clerk                      |
+| Email              | Resend (free tier)               | SendGrid, Mailgun (free tiers)    |
+| Containerization   | Docker Compose (dev/CI only)     | Vagrant, bare local installs      |
+| CI                 | GitHub Actions                   | CircleCI, GitLab CI               |
+| Hosting            | Vercel                           | Netlify, self-hosted              |
+| Testing            | Vitest + Playwright              | Jest + Cypress                    |

@@ -40,10 +40,10 @@ export default defineConfig({
         "tests/**",
         "*.config.*",
         "node_modules/**",
-        "lib/supabase/**",       // Thin SDK wrappers — tested indirectly via integration tests
-        "lib/env.ts",            // Module-level Zod validation — fails fast at boot, not unit-testable
-        "lib/auth/session.ts",   // Depends on Next.js cookies() — tested via E2E
-        "app/api/auth/**",       // OAuth callback — tested via E2E
+        "lib/supabase/**", // Thin SDK wrappers — tested indirectly via integration tests
+        "lib/env.ts", // Module-level Zod validation — fails fast at boot, not unit-testable
+        "lib/auth/session.ts", // Depends on Next.js cookies() — tested via E2E
+        "app/api/auth/**", // OAuth callback — tested via E2E
       ],
       thresholds: {
         lines: 80,

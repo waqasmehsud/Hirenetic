@@ -79,8 +79,8 @@ export default function SignupPage() {
                 />
               </svg>
             </div>
-            <span className="font-extrabold text-lg bg-gradient-to-r from-indigo-400 to-emerald-400 bg-clip-text text-transparent">
-              LLM Shield
+            <span className="font-extrabold text-lg bg-gradient-to-r from-[#3ddc97] to-emerald-400 bg-clip-text text-transparent uppercase tracking-wider">
+              HIRENETIC
             </span>
           </Link>
 
@@ -91,7 +91,7 @@ export default function SignupPage() {
                 Initialize Profile
               </h1>
               <p className="text-[13px] text-slate-400">
-                Setup your cryptographic client node credentials.
+                Setup your career calibration profile.
               </p>
             </div>
 
@@ -126,7 +126,7 @@ export default function SignupPage() {
                       htmlFor="name"
                       className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
                     >
-                      Client Full Name
+                      Full Name
                     </label>
                     <input
                       id="name"
@@ -166,7 +166,7 @@ export default function SignupPage() {
                       htmlFor="password"
                       className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
                     >
-                      Password Key
+                      Password
                     </label>
                     <input
                       id="password"
@@ -186,7 +186,7 @@ export default function SignupPage() {
                       htmlFor="confirmPassword"
                       className="block text-[12px] font-bold text-slate-400 uppercase tracking-wider"
                     >
-                      Confirm Key
+                      Confirm Password
                     </label>
                     <input
                       id="confirmPassword"
@@ -207,7 +207,7 @@ export default function SignupPage() {
                   disabled={loading}
                   className="w-full py-3.5 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-lg"
                 >
-                  {loading ? "Registering node..." : "Initialize Session"}
+                  {loading ? "Initializing profile..." : "Initialize Session"}
                 </button>
               </form>
             )}
@@ -235,24 +235,24 @@ export default function SignupPage() {
 
             <div className="flex justify-end">
               <span className="text-[9px] uppercase tracking-widest font-mono bg-indigo-950 border border-indigo-800/60 text-indigo-400 px-2.5 py-0.5 rounded-full">
-                active-guard-2.0
+                hirenetic-telemetry
               </span>
             </div>
 
             <div className="space-y-4 relative z-10">
               <div className="text-emerald-400 font-mono text-[11px] animate-pulse">
-                {"// INTEGRITY SYSTEM ACTIVE"}
+                {"// CALIBRATION SYSTEM ACTIVE"}
               </div>
               <h3 className="text-xl font-bold leading-snug">
-                Establish real-time data compliance guards.
+                Lock in career alignment vectors.
               </h3>
               <p className="text-[12px] text-slate-400 leading-relaxed">
-                Secure your LLM flows against hijack instructions in seconds.
+                Calibrate your skills and experience to lock onto career channels.
               </p>
             </div>
 
             <div className="text-[11px] text-slate-600 font-mono">
-              Signed metadata ledger.
+              Calibrated matches logged.
             </div>
           </div>
         </div>

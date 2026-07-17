@@ -2,7 +2,7 @@
 
 ## 1. Principle
 
-Every folder below exists to enforce one rule: **a new feature is additive.** If you're building "comments" or "billing" or "notifications-v2", you should be able to point to exactly one new top-level thing you added (a route folder, a migration, maybe a lib module) and nothing you had to *change* in the core. If a feature genuinely requires changing `proxy.ts` or `lib/auth`, that's a signal to pause and reconsider — flagged explicitly here so it isn't done casually.
+Every folder below exists to enforce one rule: **a new feature is additive.** If you're building "comments" or "billing" or "notifications-v2", you should be able to point to exactly one new top-level thing you added (a route folder, a migration, maybe a lib module) and nothing you had to _change_ in the core. If a feature genuinely requires changing `proxy.ts` or `lib/auth`, that's a signal to pause and reconsider — flagged explicitly here so it isn't done casually.
 
 ## 2. Top-Level Layout
 
@@ -79,7 +79,7 @@ Every new domain feature follows this exact shape. Use it as a checklist when ad
 4. **UI:** `components/<feature>/` for feature-specific components; `app/(dashboard)/<feature>/page.tsx` if it needs its own route.
 5. **Tests:** `tests/unit/<feature>/`, `tests/integration/<feature>/`, and an E2E spec if it's part of a critical journey.
 
-Nothing in this list touches `proxy.ts`, `lib/auth/session.ts`, `lib/supabase/*`, or the CI/CD config. If a feature seems to require that, it's probably actually a change to *core* auth/infra behavior — treat it as its own reviewed, deliberate change, not something bundled into a feature PR.
+Nothing in this list touches `proxy.ts`, `lib/auth/session.ts`, `lib/supabase/*`, or the CI/CD config. If a feature seems to require that, it's probably actually a change to _core_ auth/infra behavior — treat it as its own reviewed, deliberate change, not something bundled into a feature PR.
 
 ## 4. Why Route Groups (`(auth)`, `(dashboard)`)
 

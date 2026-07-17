@@ -23,7 +23,12 @@ describe("Health Check API - GET /api/health", () => {
 
   it("should return OK status (200) when both DB and email are healthy", async () => {
     fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes("supabase")) {
         return new Response(null, { status: 200 });
       }
@@ -44,7 +49,12 @@ describe("Health Check API - GET /api/health", () => {
 
   it("should return DEGRADED status (200) when only database is down", async () => {
     fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes("supabase")) {
         throw new Error("Connection refused");
       }
@@ -65,7 +75,12 @@ describe("Health Check API - GET /api/health", () => {
 
   it("should return DEGRADED status (200) when only email is down", async () => {
     fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes("supabase")) {
         return new Response(null, { status: 200 });
       }
@@ -86,7 +101,12 @@ describe("Health Check API - GET /api/health", () => {
 
   it("should return DOWN status (503) when both services are down", async () => {
     fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
       if (url.includes("supabase")) {
         throw new Error("Connection refused");
       }
@@ -106,7 +126,9 @@ describe("Health Check API - GET /api/health", () => {
   });
 
   it("should include correct response shape", async () => {
-    fetchSpy.mockImplementation(async () => new Response(null, { status: 200 }));
+    fetchSpy.mockImplementation(
+      async () => new Response(null, { status: 200 })
+    );
 
     const response = await GET();
     const body = await response.json();
@@ -121,7 +143,9 @@ describe("Health Check API - GET /api/health", () => {
   });
 
   it("should return a valid ISO timestamp", async () => {
-    fetchSpy.mockImplementation(async () => new Response(null, { status: 200 }));
+    fetchSpy.mockImplementation(
+      async () => new Response(null, { status: 200 })
+    );
 
     const response = await GET();
     const body = await response.json();
