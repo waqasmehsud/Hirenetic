@@ -16,7 +16,7 @@ In Phase 5, the first domain module (`items`) was implemented following the fold
 
 ### Did the module pattern hold?
 **Yes.** The addition of the `items` module required **zero modifications** to the core infrastructure files:
--   `middleware.ts` (or `proxy.ts`) required no adjustments; it dynamically handled auth routing using route pattern checks.
+-   `proxy.ts` required no adjustments; it dynamically handled auth routing using route pattern checks.
 -   `lib/auth/` and `lib/supabase/` files remained unchanged. Authentication and role-gating were resolved inside the handlers via the reusable guards: `requireAuth`, `requireOwnership`, and `requireAdmin`.
 -   Deployment and CI/CD pipelines needed no modifications to support the new endpoints.
 

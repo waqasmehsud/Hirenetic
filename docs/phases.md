@@ -42,7 +42,7 @@ Each phase has an explicit exit criterion. Do not start the next phase until the
 **Goal:** Users can sign up, log in, verify email, reset passwords, and the app correctly distinguishes roles.
 
 - Integrate Supabase Auth (email/password + at least one OAuth provider).
-- Build middleware (`middleware.ts`) for route protection, shared across all protected routes — not per-route logic.
+- Build middleware (`proxy.ts`) for route protection, shared across all protected routes — not per-route logic.
 - Implement email verification and password reset flows, wired to the email API (Phase 4 dependency — stub the send in the interim if sequencing requires).
 - Implement RBAC checks reusable both server-side (API routes) and client-side (UI gating, non-authoritative).
 - Write tests: unauthenticated access to protected routes, wrong-role access, token expiry/refresh.
@@ -66,7 +66,7 @@ Each phase has an explicit exit criterion. Do not start the next phase until the
 - Server-side validation via shared Zod schemas, reused for client-side form validation.
 - Apply rate limiting to the module's API routes.
 
-**Exit criterion:** The module is fully functional and its addition required zero changes to `lib/auth`, `middleware.ts`, or deployment config — confirmed by code review checklist.
+**Exit criterion:** The module is fully functional and its addition required zero changes to `lib/auth`, `proxy.ts`, or deployment config — confirmed by code review checklist.
 
 ## Phase 6 — Frontend Components & UX Shell
 **Goal:** A cohesive, accessible application shell exists for any future feature to plug into.

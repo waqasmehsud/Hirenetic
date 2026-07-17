@@ -53,3 +53,18 @@ next-env.d.ts
 # local agent environment
 /.agents/
 
+# IDEs and editors
+/.vscode/
+/.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+db.ini
+
+# logs
+*.log
+logs/
+

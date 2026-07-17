@@ -17,7 +17,7 @@ The application is a **serverless-first, Jamstack-style full-stack app**: a Next
                      │  │  Next.js    │   │ Route Handlers  │ │
                      │  │  Pages/SSR  │   │ (API layer)     │ │
                      │  └─────┬──────┘   └────────┬────────┘ │
-                     │        │  middleware.ts     │          │
+                     │        │  proxy.ts          │          │
                      │        │  (auth guard)       │          │
                      └────────┼─────────────────────┼─────────┘
                               │                      │
@@ -43,7 +43,7 @@ The application is a **serverless-first, Jamstack-style full-stack app**: a Next
 |---|---|---|
 | Next.js Pages/SSR | Rendering UI, server components fetching data | App code |
 | Route Handlers (`app/api/*`) | Server-side API surface, validation, orchestration | App code |
-| `middleware.ts` | Auth/session check, route protection, redirects | App code (shared, not per-route) |
+| `proxy.ts` | Auth/session check, route protection, redirects | App code (shared, not per-route) |
 | Supabase Auth | Identity, session issuance (JWT), OAuth, password reset tokens | Supabase (managed) |
 | Supabase Postgres | System of record, enforced via RLS | Supabase (managed) |
 | Supabase Storage | File/blob storage (avatars, uploads), enforced via RLS-like storage policies | Supabase (managed) |
@@ -55,7 +55,7 @@ The application is a **serverless-first, Jamstack-style full-stack app**: a Next
 
 ### 3.1 Authenticated request (typical case)
 1. Browser sends a request with the Supabase session cookie/JWT.
-2. `middleware.ts` intercepts the request, validates the JWT (signature + expiry) using Supabase's helper libraries, and attaches the resolved user/role to the request context. Unauthenticated requests to protected routes are redirected (pages) or rejected with 401 (API).
+2. `proxy.ts` intercepts the request, validates the JWT (signature + expiry) using Supabase's helper libraries, and attaches the resolved user/role to the request context. Unauthenticated requests to protected routes are redirected (pages) or rejected with 401 (API).
 3. The Route Handler performs its own authorization check appropriate to the action (e.g., "is this user the owner of this resource, or an admin?") — middleware handles *authentication*, handlers handle fine-grained *authorization*. This is a deliberate two-layer check: never rely on middleware alone for record-level access control.
 4. The handler validates the request body/params against a Zod schema. Invalid input is rejected with 400 before touching the database.
 5. The handler calls Supabase's Postgres via the Supabase client, using the **user's own JWT**, not a service-role key — so RLS is enforced by the database itself as a second, independent layer of authorization, even if the API layer had a bug.
@@ -81,7 +81,7 @@ The application is a **serverless-first, Jamstack-style full-stack app**: a Next
 
 ### 4.2 Authorization — defense in depth
 Two independent layers, deliberately redundant:
-1. **Application layer:** `middleware.ts` + per-handler role/ownership checks.
+1. **Application layer:** `proxy.ts` + per-handler role/ownership checks.
 2. **Database layer:** Postgres Row Level Security policies keyed to `auth.uid()` and a `role` claim, so even a compromised or buggy API layer cannot read/write rows it shouldn't — the database is the final enforcement point, not just the API.
 
 ### 4.3 Data protection

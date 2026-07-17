@@ -2,7 +2,7 @@
 
 ## 1. Principle
 
-Every folder below exists to enforce one rule: **a new feature is additive.** If you're building "comments" or "billing" or "notifications-v2", you should be able to point to exactly one new top-level thing you added (a route folder, a migration, maybe a lib module) and nothing you had to *change* in the core. If a feature genuinely requires changing `middleware.ts` or `lib/auth`, that's a signal to pause and reconsider — flagged explicitly here so it isn't done casually.
+Every folder below exists to enforce one rule: **a new feature is additive.** If you're building "comments" or "billing" or "notifications-v2", you should be able to point to exactly one new top-level thing you added (a route folder, a migration, maybe a lib module) and nothing you had to *change* in the core. If a feature genuinely requires changing `proxy.ts` or `lib/auth`, that's a signal to pause and reconsider — flagged explicitly here so it isn't done casually.
 
 ## 2. Top-Level Layout
 
@@ -51,7 +51,7 @@ project-root/
 │   ├── migrations/                     # Versioned SQL migrations (Supabase CLI)
 │   ├── seed.sql                        # Local/dev seed data
 │   └── schema/                         # Drizzle schema definitions (TypeScript source of truth)
-├── middleware.ts                       # Single shared auth/route-protection entry point
+├── proxy.ts                            # Single shared auth/route-protection entry point
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -79,11 +79,11 @@ Every new domain feature follows this exact shape. Use it as a checklist when ad
 4. **UI:** `components/<feature>/` for feature-specific components; `app/(dashboard)/<feature>/page.tsx` if it needs its own route.
 5. **Tests:** `tests/unit/<feature>/`, `tests/integration/<feature>/`, and an E2E spec if it's part of a critical journey.
 
-Nothing in this list touches `middleware.ts`, `lib/auth/session.ts`, `lib/supabase/*`, or the CI/CD config. If a feature seems to require that, it's probably actually a change to *core* auth/infra behavior — treat it as its own reviewed, deliberate change, not something bundled into a feature PR.
+Nothing in this list touches `proxy.ts`, `lib/auth/session.ts`, `lib/supabase/*`, or the CI/CD config. If a feature seems to require that, it's probably actually a change to *core* auth/infra behavior — treat it as its own reviewed, deliberate change, not something bundled into a feature PR.
 
 ## 4. Why Route Groups (`(auth)`, `(dashboard)`)
 
-Next.js route groups let us apply different layouts (public auth pages vs. authenticated app shell) without affecting the URL structure. This keeps `middleware.ts` simple: it can pattern-match on route groups/paths to decide what needs a session, rather than every page implementing its own check.
+Next.js route groups let us apply different layouts (public auth pages vs. authenticated app shell) without affecting the URL structure. This keeps `proxy.ts` simple: it can pattern-match on route groups/paths to decide what needs a session, rather than every page implementing its own check.
 
 ## 5. Why `lib/supabase/admin.ts` Is Isolated and Flagged
 

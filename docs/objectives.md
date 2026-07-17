@@ -19,7 +19,7 @@ A blueprint execution is successful when:
 - [ ] A new developer can clone the repo, run one Docker Compose command, and have a working local environment (frontend + local Supabase stack) in under 10 minutes.
 - [ ] Every environment variable required by the app is documented in `.env.example`; the app fails fast with a clear error if a required variable is missing, rather than failing silently at runtime.
 - [ ] A pull request that introduces an unvalidated input, a missing auth check, or a new dependency with a known critical CVE is blocked by CI before a human has to notice it.
-- [ ] Adding a new feature (e.g., a "comments" module) requires touching only files under one new directory plus a database migration — no changes to `lib/auth`, `middleware.ts`, or the deployment config.
+- [ ] Adding a new feature (e.g., a "comments" module) requires touching only files under one new directory plus a database migration — no changes to `lib/auth`, `proxy.ts`, or the deployment config.
 - [ ] The production deployment survives a full redeploy with zero user-facing downtime.
 - [ ] The system passes an OWASP ASVS Level 2 self-assessment checklist before first production launch.
 
