@@ -23,24 +23,65 @@ export default function LinkedInJobsDashboard() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "company" | "title">("newest");
 
-  const fetchJobs = async (isManualRefresh = false) => {
-    if (isManualRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setLoading(true);
-    }
+  // Initial fetch on mount using async promise resolution (no synchronous setState inside effect body)
+  useEffect(() => {
+    let ignore = false;
+    const supabase = createBrowserSupabaseClient();
+
+    supabase
+      .from("available_jobs")
+      .select("*")
+      .order("scraped_at", { ascending: false })
+      .then(async (res) => {
+        let data = res.data;
+        let fetchError = res.error;
+        if (fetchError && fetchError.message.includes("available_jobs")) {
+          const fallbackRes = await supabase
+            .from("linkedin_jobs")
+            .select("*")
+            .order("scraped_at", { ascending: false });
+          data = fallbackRes.data;
+          fetchError = fallbackRes.error;
+        }
+
+        if (fetchError) {
+          throw new Error(fetchError.message);
+        }
+
+        if (!ignore) {
+          setJobs((data as LinkedInJob[]) || []);
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!ignore) {
+          console.error("Failed to fetch LinkedIn jobs:", err);
+          const message =
+            err instanceof Error
+              ? err.message
+              : "An unexpected error occurred while loading job data.";
+          setError(message);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  // Manual refresh feed handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
     setError(null);
 
     try {
       const supabase = createBrowserSupabaseClient();
-      
-      // Try available_jobs first
       let { data, error: fetchError } = await supabase
         .from("available_jobs")
         .select("*")
         .order("scraped_at", { ascending: false });
 
-      // Fallback to linkedin_jobs if available_jobs table doesn't exist yet
       if (fetchError && fetchError.message.includes("available_jobs")) {
         const fallbackRes = await supabase
           .from("linkedin_jobs")
@@ -54,20 +95,18 @@ export default function LinkedInJobsDashboard() {
         throw new Error(fetchError.message);
       }
 
-      setJobs(data as LinkedInJob[] || []);
+      setJobs((data as LinkedInJob[]) || []);
     } catch (err: unknown) {
-      console.error("Failed to fetch LinkedIn jobs:", err);
-      const message = err instanceof Error ? err.message : "An unexpected error occurred while loading job data.";
+      console.error("Failed to refresh LinkedIn jobs:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred while loading job data.";
       setError(message);
     } finally {
-      setLoading(false);
       setIsRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchJobs();
-  }, []);
 
   // Filter and sort jobs
   const processedJobs = useMemo(() => {
@@ -145,7 +184,7 @@ export default function LinkedInJobsDashboard() {
 
         <div className="z-10 shrink-0">
           <button
-            onClick={() => fetchJobs(true)}
+            onClick={handleRefresh}
             disabled={loading || isRefreshing}
             className="w-full sm:w-auto px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all rounded-xl disabled:opacity-50 cursor-pointer shadow-lg shadow-indigo-900/30 flex items-center justify-center gap-2"
           >
@@ -244,7 +283,9 @@ export default function LinkedInJobsDashboard() {
             </label>
             <select
               value={sortBy}
-              onChange={(e: any) => setSortBy(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSortBy(e.target.value as "newest" | "oldest" | "company" | "title")
+              }
               className="bg-slate-950/70 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 font-mono focus:outline-none focus:border-indigo-500 cursor-pointer"
             >
               <option value="newest">Newest Scraped</option>
@@ -266,7 +307,7 @@ export default function LinkedInJobsDashboard() {
                 DATABASE_CONNECTION_ERROR
               </span>
               <button
-                onClick={() => fetchJobs()}
+                onClick={handleRefresh}
                 className="px-3 py-1 bg-rose-900/60 hover:bg-rose-800 text-white rounded font-bold transition-all cursor-pointer"
               >
                 Retry Fetch
@@ -331,7 +372,7 @@ export default function LinkedInJobsDashboard() {
                       <p className="text-xs text-slate-500 max-w-sm font-sans">
                         {searchQuery
                           ? `No jobs match your search query "${searchQuery}". Try clearing your search.`
-                          : "The linkedin_jobs database table is currently empty. Run the Python crawler to populate job postings."}
+                          : "The available_jobs database table is currently empty. Run the Python crawler to populate job postings."}
                       </p>
                       {searchQuery && (
                         <button
