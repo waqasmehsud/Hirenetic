@@ -67,4 +67,9 @@ db.ini
 # logs
 *.log
 logs/
-
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
