@@ -23,18 +23,18 @@ export default function LinkedInJobsDashboard() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "company" | "title">("newest");
 
-  // Initial fetch on mount using async promise resolution (no synchronous setState inside effect body)
+  // Initial fetch on mount using async loader (no synchronous setState inside effect body)
   useEffect(() => {
     let ignore = false;
-    const supabase = createBrowserSupabaseClient();
 
-    supabase
-      .from("available_jobs")
-      .select("*")
-      .order("scraped_at", { ascending: false })
-      .then(async (res) => {
-        let data = res.data;
-        let fetchError = res.error;
+    async function loadInitialData() {
+      try {
+        const supabase = createBrowserSupabaseClient();
+        let { data, error: fetchError } = await supabase
+          .from("available_jobs")
+          .select("*")
+          .order("scraped_at", { ascending: false });
+
         if (fetchError && fetchError.message.includes("available_jobs")) {
           const fallbackRes = await supabase
             .from("linkedin_jobs")
@@ -50,10 +50,8 @@ export default function LinkedInJobsDashboard() {
 
         if (!ignore) {
           setJobs((data as LinkedInJob[]) || []);
-          setLoading(false);
         }
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
         if (!ignore) {
           console.error("Failed to fetch LinkedIn jobs:", err);
           const message =
@@ -61,9 +59,15 @@ export default function LinkedInJobsDashboard() {
               ? err.message
               : "An unexpected error occurred while loading job data.";
           setError(message);
+        }
+      } finally {
+        if (!ignore) {
           setLoading(false);
         }
-      });
+      }
+    }
+
+    loadInitialData();
 
     return () => {
       ignore = true;
