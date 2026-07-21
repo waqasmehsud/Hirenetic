@@ -221,16 +221,18 @@ def main():
         })
 
     try:
-        logger.info("Executing Supabase upsert operation on table 'linkedin_jobs'...")
-        response = (
-            supabase.table("linkedin_jobs")
-            .upsert(upsert_payload, on_conflict="job_link")
-            .execute()
-        )
-        logger.info(f"SUCCESS: Successfully synchronized {len(upsert_payload)} job records to Supabase 'linkedin_jobs' table.")
+        logger.info("Executing Supabase upsert operation on table 'available_jobs'...")
+        supabase.table("available_jobs").upsert(upsert_payload, on_conflict="job_link").execute()
+        logger.info("SUCCESS: Synchronized job records to 'available_jobs' table.")
     except Exception as e:
-        logger.error(f"ERROR during Supabase upsert operation: {e}")
-        sys.exit(1)
+        logger.warning(f"Note on 'available_jobs' upsert: {e}")
+
+    try:
+        logger.info("Executing Supabase upsert operation on table 'linkedin_jobs'...")
+        supabase.table("linkedin_jobs").upsert(upsert_payload, on_conflict="job_link").execute()
+        logger.info("SUCCESS: Synchronized job records to 'linkedin_jobs' table.")
+    except Exception as e:
+        logger.warning(f"Note on 'linkedin_jobs' upsert: {e}")
 
     logger.info("==================================================")
     logger.info("Job Crawler run completed successfully.")

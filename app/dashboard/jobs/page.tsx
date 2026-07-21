@@ -33,10 +33,22 @@ export default function LinkedInJobsDashboard() {
 
     try {
       const supabase = createBrowserSupabaseClient();
-      const { data, error: fetchError } = await supabase
-        .from("linkedin_jobs")
+      
+      // Try available_jobs first
+      let { data, error: fetchError } = await supabase
+        .from("available_jobs")
         .select("*")
         .order("scraped_at", { ascending: false });
+
+      // Fallback to linkedin_jobs if available_jobs table doesn't exist yet
+      if (fetchError && fetchError.message.includes("available_jobs")) {
+        const fallbackRes = await supabase
+          .from("linkedin_jobs")
+          .select("*")
+          .order("scraped_at", { ascending: false });
+        data = fallbackRes.data;
+        fetchError = fallbackRes.error;
+      }
 
       if (fetchError) {
         throw new Error(fetchError.message);
