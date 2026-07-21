@@ -36,8 +36,8 @@ export default function DashboardLayoutClient({
   };
 
   const navLinks = [
-    { name: "Dashboard Console", href: "/dashboard" },
-    { name: "LinkedIn Jobs", href: "/dashboard/jobs" },
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Jobs", href: "/dashboard/jobs" },
     { name: "Job Crawler", href: "/dashboard/crawler" },
     { name: "LLM API Management", href: "/dashboard/llm-api" },
   ];

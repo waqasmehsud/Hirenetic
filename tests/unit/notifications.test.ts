@@ -19,7 +19,7 @@ globalStore.mockEnv = {
   NODE_ENV: "test",
   RESEND_API_KEY: "your-resend-api-key-here",
   EMAIL_FROM_ADDRESS: "no-reply@yourdomain.com",
-  NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321",
+  NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:55321",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "your-anon-key-here",
   NEXT_PUBLIC_APP_URL: "http://localhost:3000",
 };

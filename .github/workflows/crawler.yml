@@ -2,8 +2,8 @@ name: Automated LinkedIn Job Crawler
 
 on:
   schedule:
-    # Trigger daily at 00:00 UTC
-    - cron: '0 0 * * *'
+    # Trigger every 5 hours
+    - cron: '0 */5 * * *'
   workflow_dispatch:
     # Allows manual trigger from GitHub Actions tab
 

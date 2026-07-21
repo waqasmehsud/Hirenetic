@@ -179,10 +179,10 @@ export default function LinkedInJobsDashboard() {
             Live Supabase Feed
           </span>
           <h1 className="text-3xl font-extrabold tracking-tight leading-tight">
-            Automated LinkedIn Job Crawls
+            Automated Job Feeds
           </h1>
           <p className="text-[14px] text-slate-400 leading-relaxed">
-            Real-time feed of open tech, cybersecurity, and engineering positions parsed directly from LinkedIn and synchronized to Supabase.
+            Real-time feed of open tech, cybersecurity, and engineering positions parsed directly from various target portals and synchronized to Supabase.
           </p>
         </div>
 

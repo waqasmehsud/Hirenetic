@@ -1,55 +1,100 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 export default function CrawlerConsole() {
   const [isSweeping, setIsSweeping] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const [totalJobs, setTotalJobs] = useState(148);
   const [logs, setLogs] = useState<string[]>([
     "[SYSTEM] Telemetry crawler initial scan completed.",
-    "[INFO] Checked target portals: Vercel, Cloudflare, Supabase, Stripe, Linear.",
-    "[SUCCESS] Last automated run resolved: 148 positions synchronized.",
+    "[INFO] Checked target portals: LinkedIn job feeds.",
+    "[SUCCESS] Last automated run resolved: 0 positions synchronized.",
   ]);
 
-  const triggerManualSweep = () => {
+  useEffect(() => {
+    async function loadInitialCount() {
+      try {
+        const supabase = createBrowserSupabaseClient();
+        const { count, error } = await supabase
+          .from("available_jobs")
+          .select("*", { count: "exact", head: true });
+        if (!error && count !== null) {
+          setTotalJobs(count);
+          setLogs([
+            "[SYSTEM] Telemetry crawler initial scan completed.",
+            "[INFO] Checked target portals: LinkedIn job feeds.",
+            `[SUCCESS] Last automated run resolved: ${count} positions synchronized.`,
+          ]);
+        }
+      } catch (err) {
+        console.error("Failed to load initial count:", err);
+      }
+    }
+    loadInitialCount();
+  }, []);
+
+  const triggerManualSweep = async () => {
     if (isSweeping) return;
     setIsSweeping(true);
-    setLogs((prev) => [...prev, "[SYSTEM] Initiating manual telemetry sweep..."]);
+    setProgress(0);
+    setLogs(["[SYSTEM] Initiating real-time database crawler sweep..."]);
 
-    const crawlSteps = [
-      "[CRAWLER] Loading target endpoints matrix...",
-      "[CRAWLER] Connecting to Vercel Career API (Remote/Engineering)...",
-      "[SUCCESS] 2 new entries cached: Frontend Design Architect ($165k), Product Eng ($150k)",
-      "[CRAWLER] Connecting to Cloudflare Career portal...",
-      "[SUCCESS] 1 new entry cached: AI Agent Developer (SF/Hybrid, $180k)",
-      "[CRAWLER] Connecting to Supabase job listings...",
-      "[INFO] No new entries found (Supabase portal synced).",
-      "[CRAWLER] Restructuring payload vectors...",
-      "[DATABASE] Writing matches cryptographically to Supabase profiles...",
-      "[SYSTEM] Telemetry sweep complete. Database successfully synced.",
-    ];
+    // Increment progress mock up to 99% until backend API resolves
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev === null) return 0;
+        if (prev >= 98) return 98;
+        return prev + Math.floor(Math.random() * 4) + 1;
+      });
+    }, 250);
 
-    let currentStep = 0;
-    const interval = setInterval(() => {
-      if (currentStep < crawlSteps.length) {
-        const nextStep = crawlSteps[currentStep];
-        if (typeof nextStep === "string") {
-          setLogs((prev) => [...prev, nextStep]);
-        }
-        currentStep++;
-      } else {
-        clearInterval(interval);
+    try {
+      const res = await fetch("/api/crawler/sweep", { method: "POST" });
+      const data = await res.json();
+      
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      // Brief delay to let the user see the 100% complete state
+      setTimeout(() => {
+        setProgress(null);
         setIsSweeping(false);
-        setTotalJobs((prev) => prev + 3);
-      }
-    }, 800);
+        if (data.success) {
+          setLogs(data.logs || []);
+          if (typeof data.totalJobs === "number") {
+            setTotalJobs(data.totalJobs);
+          }
+        } else {
+          setLogs(data.logs || [`[SYSTEM ERROR] Failed to complete crawl: ${data.error}`]);
+        }
+      }, 500);
+
+    } catch (err: any) {
+      clearInterval(progressInterval);
+      setProgress(null);
+      setIsSweeping(false);
+      setLogs([
+        `[SYSTEM ERROR] API request failed: ${err.message}`,
+        "Please check if the Next.js backend server is running correctly."
+      ]);
+    }
   };
 
   const getLogStyle = (logMessage: string | undefined) => {
     if (!logMessage) return "border-slate-800";
-    if (logMessage.startsWith("[SUCCESS]")) return "border-[#3ddc97] text-[#3ddc97]";
-    if (logMessage.startsWith("[SYSTEM]")) return "border-indigo-500 text-indigo-400";
-    return "border-slate-800";
+    const msg = logMessage.toLowerCase();
+    if (msg.includes("success") || msg.includes("synchronized") || msg.includes("successfully")) {
+      return "border-[#3ddc97] text-[#3ddc97]";
+    }
+    if (msg.includes("error") || msg.includes("failed") || msg.includes("refused")) {
+      return "border-rose-500 text-rose-400";
+    }
+    if (msg.includes("starting") || msg.includes("initiating") || msg.includes("==================")) {
+      return "border-indigo-500 text-indigo-400";
+    }
+    return "border-slate-800 text-slate-300";
   };
 
   return (
@@ -67,7 +112,7 @@ export default function CrawlerConsole() {
             Background Job Telemetry Crawler
           </h2>
           <p className="text-[14px] text-slate-400 leading-relaxed">
-            Monitor and trigger the background scraping nodes. Crawl target company portals, parse skill structures, and synchronize them into the matching database.
+            Monitor and trigger the background scraping nodes. Crawl public LinkedIn job feeds, parse engineering positions, and synchronize them directly into the Supabase database.
           </p>
         </div>
 
@@ -97,7 +142,7 @@ export default function CrawlerConsole() {
             Active Portals
           </span>
           <span className="text-2xl font-extrabold text-indigo-400 mt-1 block">
-            5 tracked
+            LinkedIn Feed
           </span>
         </div>
         <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
@@ -105,7 +150,7 @@ export default function CrawlerConsole() {
             Sweep Frequency
           </span>
           <span className="text-sm font-bold text-purple-400 mt-2 block font-mono">
-            Every 6 hours
+            Every 5 hours
           </span>
         </div>
         <div className="p-5 bg-slate-900/50 border border-slate-850/80 rounded-2xl">
@@ -113,7 +158,7 @@ export default function CrawlerConsole() {
             Next Run Time
           </span>
           <span className="text-sm font-bold text-emerald-400 mt-2 block font-mono">
-            06:00:00 (Scheduled)
+            05:00:00 (Scheduled)
           </span>
         </div>
       </div>
@@ -135,7 +180,7 @@ export default function CrawlerConsole() {
               </div>
               <div className="border-b border-slate-850 pb-2">
                 <span className="text-slate-500 block">SCHEDULE CRON:</span>
-                <span className="text-signal">0 */6 * * *</span>
+                <span className="text-signal">0 */5 * * *</span>
               </div>
               <div className="border-b border-slate-850 pb-2">
                 <span className="text-slate-500 block">TARGET SCHEMAS:</span>
@@ -162,20 +207,54 @@ export default function CrawlerConsole() {
             </div>
           </div>
 
-          <div className="p-5 bg-slate-950 border border-slate-850 rounded-[18px] font-mono text-[12px] text-slate-300 space-y-2.5 min-h-[300px] max-h-[400px] overflow-y-auto custom-scrollbar">
-            {logs.map((log, index) => (
-              <div
-                key={index}
-                className={`leading-relaxed pl-2 border-l ${getLogStyle(log)}`}
-              >
-                {log || ""}
+          <div className="p-5 bg-slate-950 border border-slate-850 rounded-[18px] font-mono text-[12px] text-slate-300 space-y-2.5 min-h-[320px] max-h-[450px] overflow-y-auto custom-scrollbar flex flex-col justify-start">
+            {progress !== null ? (
+              <div className="flex flex-col items-center justify-center flex-1 py-10 space-y-4">
+                <div className="relative flex items-center justify-center">
+                  <svg className="w-24 h-24 transform -rotate-90">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="rgba(255, 255, 255, 0.05)"
+                      strokeWidth="6"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="40"
+                      stroke="#3ddc97"
+                      strokeWidth="6"
+                      fill="transparent"
+                      strokeDasharray={251.2}
+                      strokeDashoffset={251.2 - (251.2 * progress) / 100}
+                      strokeLinecap="round"
+                      className="transition-all duration-300 ease-out"
+                    />
+                  </svg>
+                  <span className="absolute text-sm font-bold text-white font-mono">{progress}%</span>
+                </div>
+                <div className="text-center space-y-1.5">
+                  <p className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider animate-pulse">
+                    Running live LinkedIn crawler...
+                  </p>
+                  <p className="text-[10px] text-slate-500 max-w-sm">
+                    Scraping live job positions and synchronizing records to Supabase tables.
+                  </p>
+                </div>
               </div>
-            ))}
-            {isSweeping && (
-              <div className="text-signal animate-pulse flex items-center gap-1.5 pl-2">
-                <span className="w-1.5 h-1.5 bg-[#3ddc97] rounded-full" />
-                <span>Sweeping web career nodes...</span>
-              </div>
+            ) : (
+              <>
+                {logs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={`leading-relaxed pl-2 border-l ${getLogStyle(log)}`}
+                  >
+                    {log || ""}
+                  </div>
+                ))}
+              </>
             )}
           </div>
         </div>

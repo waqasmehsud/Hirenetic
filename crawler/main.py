@@ -65,6 +65,27 @@ FALLBACK_JOBS = [
         "job_link": "https://www.linkedin.com/jobs/view/staff-cloud-systems-cloudflare",
         "posted_date": "Just now",
     },
+    {
+        "job_title": "Frontend Design Architect ($165k)",
+        "company": "Vercel",
+        "location": "Remote / Engineering",
+        "job_link": "https://vercel.com/careers/frontend-design-architect",
+        "posted_date": "Just now",
+    },
+    {
+        "job_title": "Product Eng ($150k)",
+        "company": "Vercel",
+        "location": "Remote / Engineering",
+        "job_link": "https://vercel.com/careers/product-eng",
+        "posted_date": "Just now",
+    },
+    {
+        "job_title": "AI Agent Developer (SF/Hybrid, $180k)",
+        "company": "Cloudflare",
+        "location": "SF/Hybrid",
+        "job_link": "https://cloudflare.com/careers/ai-agent-developer",
+        "posted_date": "Just now",
+    },
 ]
 
 def clean_url(url: str) -> str:
