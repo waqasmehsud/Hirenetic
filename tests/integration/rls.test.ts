@@ -62,13 +62,16 @@ describe("Row Level Security (RLS) Integration Tests", () => {
 
   it("should prevent normal authenticated users from reading other users' private profiles", async () => {
     if (!dbAvailable) return;
+
+    const { data: { user } } = await userClient.auth.getUser();
+    expect(user).not.toBeNull();
+    const userId = user!.id;
+
     const { data: profileData } = await userClient.from("profiles").select("*");
     expect(profileData).not.toBeNull();
 
     // User should only see their own profile
-    const onlyOwnProfile = profileData!.every(
-      (p) => p.id === "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12"
-    );
+    const onlyOwnProfile = profileData!.every((p) => p.id === userId);
     expect(onlyOwnProfile).toBe(true);
   });
 

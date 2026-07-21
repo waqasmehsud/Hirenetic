@@ -44,6 +44,9 @@ export default defineConfig({
         "lib/env.ts", // Module-level Zod validation — fails fast at boot, not unit-testable
         "lib/auth/session.ts", // Depends on Next.js cookies() — tested via E2E
         "app/api/auth/**", // OAuth callback — tested via E2E
+        "app/api/chat/**", // Gemini API integration — tested via manual chat UI
+        "app/api/crawler/**", // Spawns python scraper processes — tested via crawler UI
+        "app/api/llm-api/**", // Storing credentials — tested via API dashboard UI
       ],
       thresholds: {
         lines: 80,
