@@ -71,12 +71,13 @@ export default function CrawlerConsole() {
         }
       }, 500);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
       clearInterval(progressInterval);
       setProgress(null);
       setIsSweeping(false);
       setLogs([
-        `[SYSTEM ERROR] API request failed: ${err.message}`,
+        `[SYSTEM ERROR] API request failed: ${errorMsg}`,
         "Please check if the Next.js backend server is running correctly."
       ]);
     }

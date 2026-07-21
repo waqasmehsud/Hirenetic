@@ -41,10 +41,17 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const keyMap = new Map<string, any>();
+    interface KeyRecord {
+      model_name: string;
+      api_key: string;
+      requests_today: number;
+      tokens_today: number;
+      reset_at: string;
+    }
+    const keyMap = new Map<string, KeyRecord>();
     if (keys) {
       keys.forEach((k) => {
-        keyMap.set(k.model_name, k);
+        keyMap.set(k.model_name, k as KeyRecord);
       });
     }
 

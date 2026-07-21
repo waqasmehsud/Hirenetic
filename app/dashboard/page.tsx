@@ -30,8 +30,12 @@ export default function DashboardHome() {
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
+            interface KeyInfo {
+              modelName: string;
+              isConfigured: boolean;
+            }
             const geminiKey = data.keys.find(
-              (k: any) => k.modelName.startsWith("Gemini") && k.isConfigured
+              (k: KeyInfo) => k.modelName.startsWith("Gemini") && k.isConfigured
             );
             setHasKey(!!geminiKey);
           }

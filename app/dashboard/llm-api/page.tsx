@@ -19,6 +19,7 @@ export default function LLMAPIManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<Record<string, string>>({});
 
   const modelOptions = [
     "Gemini 3.5 Flash",
@@ -31,11 +32,6 @@ export default function LLMAPIManagement() {
     "Anthropic Claude 3.5 Sonnet",
     "DeepSeek V3",
   ];
-
-  // Fetch configured keys on mount
-  useEffect(() => {
-    fetchKeys();
-  }, []);
 
   const fetchKeys = async () => {
     try {
@@ -52,6 +48,42 @@ export default function LLMAPIManagement() {
       setIsFetching(false);
     }
   };
+
+  // Fetch configured keys on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchKeys();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Calculate remaining times dynamically in a pure effect to satisfy component purity rule
+  useEffect(() => {
+    const calculateTimes = () => {
+      const newTimes: Record<string, string> = {};
+      keys.forEach((k) => {
+        if (k.isConfigured && k.refreshTime) {
+          try {
+            const diff = new Date(k.refreshTime).getTime() - Date.now();
+            if (diff <= 0) {
+              newTimes[k.modelName] = "soon";
+            } else {
+              const hrs = Math.floor(diff / (1000 * 60 * 60));
+              const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+              newTimes[k.modelName] = `${hrs}h ${mins}m`;
+            }
+          } catch {
+            newTimes[k.modelName] = "24h";
+          }
+        }
+      });
+      setTimeRemaining(newTimes);
+    };
+
+    calculateTimes();
+    const interval = setInterval(calculateTimes, 30000);
+    return () => clearInterval(interval);
+  }, [keys]);
 
   const handleAddKey = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +114,7 @@ export default function LLMAPIManagement() {
       } else {
         setMessage({ text: data.error || "Failed to save API key.", type: "error" });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Save API key error:", err);
       setMessage({ text: "An error occurred while saving the key.", type: "error" });
     } finally {
@@ -112,23 +144,11 @@ export default function LLMAPIManagement() {
       } else {
         setMessage({ text: data.error || "Failed to remove API key.", type: "error" });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Delete API key error:", err);
       setMessage({ text: "An error occurred while deleting the key.", type: "error" });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const formatTimeRemaining = (isoString: string) => {
-    try {
-      const diff = new Date(isoString).getTime() - Date.now();
-      if (diff <= 0) return "soon";
-      const hrs = Math.floor(diff / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      return `${hrs}h ${mins}m`;
-    } catch {
-      return "24h";
     }
   };
 
@@ -335,7 +355,7 @@ export default function LLMAPIManagement() {
                         </div>
                         <div className="space-y-0.5">
                           <span className="text-slate-500 block uppercase font-bold text-[8.5px]">Refresh Time:</span>
-                          <span className="text-indigo-400 font-semibold">{formatTimeRemaining(k.refreshTime)}</span>
+                          <span className="text-indigo-400 font-semibold">{timeRemaining[k.modelName] || "24h"}</span>
                         </div>
                       </div>
                     )}

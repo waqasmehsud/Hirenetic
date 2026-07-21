@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   try {
     const scriptPath = path.join(process.cwd(), "crawler", "main.py");
-    console.log("Starting real python crawler sweep at:", scriptPath);
+    console.warn("Starting real python crawler sweep at:", scriptPath);
 
     // Run the Python script to scrape live LinkedIn jobs and upsert them to Supabase
     const { stdout, stderr } = await execAsync(`python "${scriptPath}"`, {
@@ -37,23 +37,24 @@ export async function POST() {
       logs: logs,
       totalJobs: error || count === null ? 148 : count,
     });
-  } catch (err: any) {
-    console.error("Failed to run python crawler:", err);
+  } catch (err: unknown) {
+    const errorObj = err as { stdout?: string; stderr?: string; message?: string };
+    console.error("Failed to run python crawler:", errorObj);
     
     // Attempt to salvage any stdout log lines generated before failure
     const logs = [];
-    if (err.stdout) {
-      logs.push(...err.stdout.split("\n").filter((line: string) => line.trim() !== ""));
+    if (errorObj.stdout) {
+      logs.push(...errorObj.stdout.split("\n").filter((line: string) => line.trim() !== ""));
     }
-    logs.push(`[SYSTEM ERROR] Crawler failed: ${err.message}`);
-    if (err.stderr) {
-      logs.push(`[STDERR] ${err.stderr}`);
+    logs.push(`[SYSTEM ERROR] Crawler failed: ${errorObj.message || "Unknown error"}`);
+    if (errorObj.stderr) {
+      logs.push(`[STDERR] ${errorObj.stderr}`);
     }
 
     return NextResponse.json({
       success: false,
       logs: logs,
-      error: err.message,
+      error: errorObj.message || "Unknown error",
     });
   }
 }
