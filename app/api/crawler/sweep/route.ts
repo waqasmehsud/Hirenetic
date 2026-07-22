@@ -63,6 +63,13 @@ export async function POST() {
     });
 
     if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error(
+          "GitHub API returned status 403 (Forbidden). The provided GITHUB_PAT does not have permission to trigger workflows. " +
+          "Please ensure your Fine-Grained Personal Access Token has 'Actions' (Read & Write) repository permissions, " +
+          "or your Classic token has the 'workflow' scope checked."
+        );
+      }
       const errorText = await response.text();
       throw new Error(`GitHub API returned status ${response.status}: ${errorText}`);
     }
