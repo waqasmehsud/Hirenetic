@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
-import path from "path";
-import { promisify } from "util";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-
-const execAsync = promisify(exec);
+import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -17,61 +13,74 @@ export async function POST() {
 
   try {
     logs.push("==================================================");
-    logs.push("Starting LinkedIn Job Crawler process...");
+    logs.push("Initiating Remote GitHub Actions Workflow...");
     logs.push("==================================================");
 
-    const scriptPath = path.join(process.cwd(), "crawler", "main.py");
-
-    // Try to run Python script locally
-    try {
-      log(`Attempting to execute Python script: ${scriptPath}`);
-      const { stdout, stderr } = await execAsync(`python "${scriptPath}"`, {
-        env: {
-          ...process.env,
-          PYTHONUNBUFFERED: "1",
-        },
-      });
-
-      const pythonLogs = stdout.split("\n").filter((line) => line.trim() !== "");
-      logs.push(...pythonLogs);
-      if (stderr) {
-        logs.push(`[WARNING/STDERR] ${stderr}`);
+    const token = env.GITHUB_PAT;
+    const owner = env.GITHUB_OWNER || "waqasmehsud";
+    const repo = env.GITHUB_REPO || "Hirenetic";
+    
+    let ref = "main";
+    if (process.env.NODE_ENV === "development") {
+      try {
+        const { execSync } = require("child_process");
+        ref = execSync("git branch --show-current").toString().trim() || "main";
+      } catch (e) {
+        // Fallback to "main"
       }
-    } catch (err: unknown) {
-      const execError = err as { message?: string; code?: number; stdout?: string; stderr?: string };
-      
-      // Check if command failed because python is missing (e.g., on Vercel serverless environment)
-      if (
-        execError.message && 
-        (execError.message.includes("not found") || 
-         execError.message.includes("ENOENT") || 
-         execError.code === 127)
-      ) {
-        logs.push("[SYSTEM NOTICE] Vercel Serverless Environment detected (Python interpreter not found on host).");
-        logs.push("[INFO] Automated crawls are scheduled to run using Python every 5 hours inside the GitHub Actions runner.");
-        logs.push("[INFO] To trigger a manual run on production, go to GitHub Repository -> Actions -> 'Automated LinkedIn Job Crawler' -> 'Run workflow'.");
-        logs.push("[INFO] Retrieving current active jobs count from database cache...");
-      } else {
-        // Handle other execution/script errors
-        logs.push(`[ERROR] Execution failed: ${execError.message || "Unknown error"}`);
-        if (execError.stdout) {
-          logs.push(...execError.stdout.split("\n").filter((line: string) => line.trim() !== ""));
-        }
-        if (execError.stderr) {
-          logs.push(`[STDERR] ${execError.stderr}`);
-        }
-      }
+    } else {
+      ref = process.env.VERCEL_GIT_COMMIT_REF || "main";
+    }
+    
+    const workflowId = "crawler.yml";
+
+    log(`Target Repository: ${owner}/${repo}`);
+    log(`Target Workflow: ${workflowId}`);
+    log(`Target Branch/Ref: ${ref}`);
+
+    if (!token) {
+      throw new Error(
+        "GITHUB_PAT environment variable is not set. Please configure it in your .env file or Vercel dashboard."
+      );
     }
 
-    // Get the updated total count from Supabase
+    log("Sending trigger request to GitHub API...");
+
+    const githubUrl = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`;
+
+    const response = await fetch(githubUrl, {
+      method: "POST",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${token}`,
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "Hirenetic-App",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ref: ref,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`GitHub API returned status ${response.status}: ${errorText}`);
+    }
+
+    logs.push("==================================================");
+    logs.push("[SUCCESS] GitHub Actions workflow triggered successfully!");
+    logs.push("Please check your GitHub Actions tab to monitor the run progress.");
+    logs.push("==================================================");
+
+    // Get the current total count from Supabase
     const supabase = createAdminSupabaseClient();
     const { count, error } = await supabase
       .from("available_jobs")
       .select("*", { count: "exact", head: true });
 
-    logs.push("==================================================");
-    logs.push("Job Crawler run completed.");
-    logs.push("==================================================");
+    if (error) {
+      log(`Failed to fetch database job count: ${error.message}`);
+    }
 
     return NextResponse.json({
       success: true,
@@ -80,7 +89,7 @@ export async function POST() {
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : "Unknown error";
-    logs.push(`[SYSTEM ERROR] Sweep handler failed: ${errorMsg}`);
+    logs.push(`[SYSTEM ERROR] Trigger failed: ${errorMsg}`);
 
     return NextResponse.json({
       success: false,

@@ -19,6 +19,9 @@ const serverSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional().or(z.literal("")),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional().or(z.literal("")),
   ALLOWED_ORIGINS: z.string().default("http://localhost:3000"),
+  GITHUB_PAT: z.string().optional().default(""),
+  GITHUB_OWNER: z.string().optional().default("waqasmehsud"),
+  GITHUB_REPO: z.string().optional().default("Hirenetic"),
 });
 
 const isServer = typeof window === "undefined";
@@ -39,6 +42,9 @@ const serverEnv = isServer
       UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
       UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
       ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+      GITHUB_PAT: process.env.GITHUB_PAT,
+      GITHUB_OWNER: process.env.GITHUB_OWNER,
+      GITHUB_REPO: process.env.GITHUB_REPO,
     }
   : {};
 
