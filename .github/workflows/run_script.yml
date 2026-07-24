@@ -1,0 +1,83 @@
+name: Hirenetic Script Executor
+
+on:
+  workflow_dispatch:
+    inputs:
+      script_name:
+        description: 'Name of script'
+        required: true
+      script_filename:
+        description: 'Filename of script'
+        required: true
+      script_code:
+        description: 'Raw Python code to execute'
+        required: true
+      requirements:
+        description: 'Space or comma separated pip packages (e.g., spacy torch selenium)'
+        required: false
+        default: ''
+
+jobs:
+  execute-python-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Create Python Script File
+        run: |
+          cat << 'EOF' > "${{ github.event.inputs.script_filename }}"
+          ${{ github.event.inputs.script_code }}
+          EOF
+
+      - name: Dynamic Dependency Auto-Installer
+        run: |
+          python -m pip install --upgrade pip
+          
+          # 1. Install explicitly specified packages if any
+          REQ_INPUT="${{ github.event.inputs.requirements }}"
+          if [ -n "$REQ_INPUT" ]; then
+            echo "Installing explicit requirements: $REQ_INPUT"
+            pip install $REQ_INPUT || true
+          fi
+          
+          # 2. Auto-parse import statements directly from script code
+          echo "Scanning script for import statements..."
+          cat << 'EOF' > parse_imports.py
+          import re, sys, subprocess
+          
+          code_file = sys.argv[1]
+          with open(code_file, 'r') as f:
+              code = f.read()
+          
+          # Standard library modules to ignore
+          stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'datetime', 'random', 'typing', 'pathlib', 'sqlite3', 'collections', 'itertools'}
+          # Package mapping overrides if import name differs from pip package name
+          pip_map = {'bs4': 'beautifulsoup4', 'cv2': 'opencv-python', 'sklearn': 'scikit-learn', 'PIL': 'Pillow'}
+          
+          imports = set(re.findall(r'^(?:import|from)\s+([a-zA-Z0-9_]+)', code, re.MULTILINE))
+          to_install = []
+          for imp in imports:
+              if imp not in stdlib:
+                  pkg = pip_map.get(imp, imp)
+                  to_install.append(pkg)
+          
+          if to_install:
+              print(f"Auto-detected packages to install: {to_install}")
+              subprocess.run([sys.executable, "-m", "pip", "install"] + to_install)
+          else:
+              print("No additional external packages detected.")
+          EOF
+          python parse_imports.py "${{ github.event.inputs.script_filename }}"
+
+      - name: Execute Script
+        run: |
+          echo "==================== EXECUTION START ===================="
+          python "${{ github.event.inputs.script_filename }}"
+          echo "==================== EXECUTION END ======================"
