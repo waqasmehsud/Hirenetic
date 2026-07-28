@@ -31,10 +31,11 @@ jobs:
           python-version: '3.11'
 
       - name: Create Python Script File
+        env:
+          SCRIPT_CODE: ${{ github.event.inputs.script_code }}
+          SCRIPT_FILENAME: ${{ github.event.inputs.script_filename }}
         run: |
-          cat << 'EOF' > "${{ github.event.inputs.script_filename }}"
-          ${{ github.event.inputs.script_code }}
-          EOF
+          python -c 'import os; open(os.environ["SCRIPT_FILENAME"], "w", encoding="utf-8").write(os.environ["SCRIPT_CODE"])'
 
       - name: Dynamic Dependency Auto-Installer
         run: |
