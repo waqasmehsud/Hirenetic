@@ -35,7 +35,22 @@ jobs:
           SCRIPT_CODE: ${{ github.event.inputs.script_code }}
           SCRIPT_FILENAME: ${{ github.event.inputs.script_filename }}
         run: |
-          python -c 'import os; open(os.environ["SCRIPT_FILENAME"], "w", encoding="utf-8").write(os.environ["SCRIPT_CODE"])'
+          python -c '
+          import os, re, textwrap
+          code = os.environ.get("SCRIPT_CODE", "")
+          code = textwrap.dedent(code)
+          lines = code.splitlines()
+          fixed_lines = []
+          for line in lines:
+              if re.match(r"^\s+(import|from)\s+", line):
+                  fixed_lines.append(line.lstrip())
+              else:
+                  fixed_lines.append(line)
+          clean_code = "\n".join(fixed_lines)
+          filename = os.environ.get("SCRIPT_FILENAME", "script.py")
+          with open(filename, "w", encoding="utf-8") as f:
+              f.write(clean_code)
+          '
 
       - name: Dynamic Dependency Auto-Installer
         run: |
