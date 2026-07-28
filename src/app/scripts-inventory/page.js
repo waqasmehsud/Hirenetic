@@ -116,38 +116,7 @@ const icons = {
   fileCode: <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>,
 };
 
-/* ========================= TERMINAL SIMULATION ========================= */
-const generateTerminalLines = (script) => {
-  const lines = [
-    { text: `$ python3 ${script.filename || 'script.py'}`, prompt: true },
-    { text: `[init] Python 3.11.4 runtime environment starting...`, type: 'info' },
-    { text: `[init] Loading script module: ${script.name || 'Custom Script'}`, type: 'info' },
-    { text: `[ast]  AST validation & syntax tree parsing... OK`, type: 'success' },
-    { text: `[load] Category: ${script.category || 'Utility'} | Status: ${script.status || 'Active'}`, type: 'info' },
-    { text: `[exec] Executing ${script.filename || 'script.py'}...`, type: 'accent' },
-  ];
 
-  const codeText = script.code || '';
-  const printMatches = [...codeText.matchAll(/print\s*\(\s*f?["'](.*?)["']\s*\)/g)];
-
-  if (printMatches.length > 0) {
-    lines.push({ text: `--- [STDOUT OUTPUT] ---`, type: 'info' });
-    printMatches.forEach((match) => {
-      let outputStr = match[1]
-        .replace(/\{.*?\}/g, 'OK')
-        .replace(/\\n/g, ' ');
-      lines.push({ text: `>>> ${outputStr}`, type: 'success' });
-    });
-  } else {
-    lines.push({ text: `[data] Initializing execution pipeline...`, type: 'info' });
-    lines.push({ text: `[data] Code payload (${codeText.split('\n').length} lines) loaded into sandbox.`, type: 'info' });
-    lines.push({ text: `>>> [Output] Execution completed successfully with 0 errors.`, type: 'success' });
-  }
-
-  lines.push({ text: `[done] ${script.name || 'Script'} finished processing.`, type: 'success' });
-  lines.push({ text: `[exit] Process exited with code 0`, type: 'success' });
-  return lines;
-};
 
 /* ========================= MAIN COMPONENT ========================= */
 export default function ScriptsInventoryPage() {
@@ -363,6 +332,7 @@ export default function ScriptsInventoryPage() {
   };
 
   // ---- Run ----
+  const [runMode, setRunMode] = useState('local'); // 'local' or 'github'
   const runIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
 
@@ -374,20 +344,17 @@ export default function ScriptsInventoryPage() {
     setRunModal(null);
   }, []);
 
-  const openRunModal = async (script) => {
-    if (script.status === 'Disabled') {
-      showToast(`Cannot run "${script.name}" — Script status is Disabled. Change status to Active in Edit -> Settings to run.`, 'error');
-      return;
-    }
-
-    // Clear any existing intervals
-    if (runIntervalRef.current) clearInterval(runIntervalRef.current);
-    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-
-    setRunModal(script);
+  const executeRun = async (script, mode) => {
+    setRunMode(mode);
     setTerminalLines([]);
     setTerminalStatus('running');
     setTerminalTimer(0);
+
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    const startTime = Date.now();
+    timerIntervalRef.current = setInterval(() => {
+      setTerminalTimer(+((Date.now() - startTime) / 1000).toFixed(1));
+    }, 100);
 
     // Increment executions in Supabase
     supabase
@@ -396,65 +363,119 @@ export default function ScriptsInventoryPage() {
       .eq('id', script.id)
       .then();
 
-    // Call GitHub Action API
-    let githubLog = null;
-    try {
-      const res = await fetch('/api/run-github-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          script_name: script.name,
-          script_filename: script.filename,
-          script_code: script.code,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        githubLog = {
-          text: `[github] GitHub Action workflow dispatched! Check logs: ${data.workflow_url}`,
-          type: 'success',
-        };
-      } else {
-        githubLog = {
-          text: `[info] GitHub API: ${data.error || 'Token unconfigured (Local sandbox mode)'}`,
-          type: 'info',
-        };
-      }
-    } catch {
-      githubLog = { text: '[info] Running in local sandbox mode', type: 'info' };
-    }
+    if (mode === 'local') {
+      setTerminalLines([
+        { text: `$ python "${script.filename || 'script.py'}"`, prompt: true },
+        { text: `[init] Executing Python script on local runtime environment...`, type: 'info' }
+      ]);
 
-    const lines = generateTerminalLines(script);
-    if (githubLog) {
-      lines.splice(2, 0, githubLog);
-    }
+      try {
+        const res = await fetch('/api/run-python-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            script_code: script.code,
+            script_filename: script.filename,
+          }),
+        });
+        const data = await res.json();
+        clearInterval(timerIntervalRef.current);
 
-    let lineIndex = 0;
-    runIntervalRef.current = setInterval(() => {
-      if (lineIndex < lines.length) {
-        const currentLine = lines[lineIndex];
-        setTerminalLines((prev) => [...prev, currentLine]);
-        lineIndex++;
-      } else {
-        clearInterval(runIntervalRef.current);
-        runIntervalRef.current = null;
-        setTerminalStatus('completed');
-        fetchScripts();
-      }
-    }, 350);
-
-    // Timer
-    const totalDuration = lines.length * 0.35;
-    timerIntervalRef.current = setInterval(() => {
-      setTerminalTimer((prev) => {
-        if (prev >= totalDuration) {
-          clearInterval(timerIntervalRef.current);
-          timerIntervalRef.current = null;
-          return prev;
+        if (data.error) {
+          setTerminalLines((prev) => [
+            ...prev,
+            { text: `[ERROR] ${data.error}`, type: 'error' },
+            { text: `[exit] Execution failed`, type: 'error' }
+          ]);
+          setTerminalStatus('failed');
+          return;
         }
-        return +(prev + 0.1).toFixed(1);
-      });
-    }, 100);
+
+        const linesToAdd = [];
+        if (data.stdout) {
+          data.stdout.trim().split('\n').forEach((line) => {
+            linesToAdd.push({ text: line, type: 'success' });
+          });
+        }
+        if (data.stderr) {
+          data.stderr.trim().split('\n').forEach((line) => {
+            linesToAdd.push({ text: line, type: 'error' });
+          });
+        }
+        if (!data.stdout && !data.stderr) {
+          linesToAdd.push({ text: `Script executed silently with 0 output lines.`, type: 'info' });
+        }
+
+        linesToAdd.push({
+          text: `[exit] Process exited with code ${data.exitCode}`,
+          type: data.success ? 'success' : 'error',
+        });
+
+        setTerminalLines((prev) => [...prev, ...linesToAdd]);
+        setTerminalStatus(data.success ? 'completed' : 'failed');
+        fetchScripts();
+      } catch (err) {
+        clearInterval(timerIntervalRef.current);
+        setTerminalLines((prev) => [
+          ...prev,
+          { text: `[ERROR] Failed to run local python script: ${err.message}`, type: 'error' }
+        ]);
+        setTerminalStatus('failed');
+      }
+    } else {
+      setTerminalLines([
+        { text: `$ github-actions dispatch "${script.filename || 'script.py'}"`, prompt: true },
+        { text: `[init] Sending dispatch payload to GitHub Actions workflow...`, type: 'info' }
+      ]);
+
+      try {
+        const res = await fetch('/api/run-github-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            script_name: script.name,
+            script_filename: script.filename,
+            script_code: script.code,
+          }),
+        });
+        const data = await res.json();
+        clearInterval(timerIntervalRef.current);
+
+        if (data.success) {
+          setTerminalLines((prev) => [
+            ...prev,
+            { text: `[SUCCESS] ${data.message}`, type: 'success' },
+            { text: `[URL] GitHub Workflow logs: ${data.workflow_url}`, type: 'accent' },
+            { text: `[exit] GitHub Action dispatched successfully.`, type: 'success' }
+          ]);
+          setTerminalStatus('completed');
+          fetchScripts();
+        } else {
+          setTerminalLines((prev) => [
+            ...prev,
+            { text: `[ERROR] GitHub API: ${data.error}`, type: 'error' },
+            { text: `[exit] Dispatch failed.`, type: 'error' }
+          ]);
+          setTerminalStatus('failed');
+        }
+      } catch (err) {
+        clearInterval(timerIntervalRef.current);
+        setTerminalLines((prev) => [
+          ...prev,
+          { text: `[ERROR] Network error: ${err.message}`, type: 'error' }
+        ]);
+        setTerminalStatus('failed');
+      }
+    }
+  };
+
+  const openRunModal = (script, mode = 'local') => {
+    if (script.status === 'Disabled') {
+      showToast(`Cannot run "${script.name}" — Script status is Disabled. Change status to Active in Edit -> Settings to run.`, 'error');
+      return;
+    }
+    setRunModal(script);
+    executeRun(script, mode);
   };
 
   // Auto scroll terminal
@@ -482,24 +503,37 @@ export default function ScriptsInventoryPage() {
     showToast('Code copied to clipboard');
   };
 
-  const handleRunTest = () => {
-    setConsoleOutput('');
-    setTimeout(() => setConsoleOutput('[init] Python 3.11.4 sandbox starting...\n'), 150);
-    setTimeout(() => setConsoleOutput((p) => p + '[exec] Compiling & executing code payload...\n'), 400);
-    
-    const printMatches = [...editCode.matchAll(/print\s*\(\s*f?["'](.*?)["']\s*\)/g)];
-    setTimeout(() => {
-      let out = '[done] Execution Output:\n';
-      if (printMatches.length > 0) {
-        printMatches.forEach((m) => {
-          out += `  >>> ${m[1]}\n`;
-        });
-      } else {
-        out += `  >>> Code executed successfully (0 errors, ${editCode.split('\n').length} lines compiled).\n`;
+  const handleRunTest = async () => {
+    setConsoleOutput('[init] Executing code payload on local Python runtime...\n');
+    try {
+      const res = await fetch('/api/run-python-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          script_code: editCode,
+          script_filename: editSettings.filename || 'script.py',
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setConsoleOutput(`[error] Server error: ${data.error}\n`);
+        return;
       }
-      out += '[done] Test completed - Exit code: 0\n';
-      setConsoleOutput((p) => p + out);
-    }, 800);
+      let out = '[info] Real Python Execution Result:\n';
+      if (data.stdout) {
+        out += `[STDOUT]\n${data.stdout}\n`;
+      }
+      if (data.stderr) {
+        out += `[STDERR / ERROR]\n${data.stderr}\n`;
+      }
+      if (!data.stdout && !data.stderr) {
+        out += '[info] Execution finished silently (No output).\n';
+      }
+      out += `[done] Process exited with code ${data.exitCode}\n`;
+      setConsoleOutput(out);
+    } catch (err) {
+      setConsoleOutput(`[error] Failed to connect to Python runner: ${err.message}\n`);
+    }
   };
 
   // ---- Refresh ----
@@ -1009,9 +1043,32 @@ export default function ScriptsInventoryPage() {
       {runModal && (
         <div className="si-modal-overlay" onClick={closeRunModal}>
           <div className="si-modal md" onClick={(e) => e.stopPropagation()}>
-            <div className="si-modal-header">
-              <span className="si-modal-title">Script Execution — {runModal.name}</span>
-              <button className="si-modal-close" onClick={closeRunModal}>{icons.x}</button>
+            <div className="si-modal-header" style={{ flexWrap: 'wrap', gap: 10 }}>
+              <div>
+                <span className="si-modal-title">Script Execution — {runModal.name}</span>
+                <div style={{ fontSize: '0.78rem', color: 'var(--si-text-muted)', marginTop: 2 }}>
+                  Mode: <strong>{runMode === 'local' ? 'Local System Python Runtime' : 'Live GitHub Actions Cloud Workflow'}</strong>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                <button
+                  className={`si-btn ${runMode === 'local' ? 'si-btn-primary' : 'si-btn-ghost'}`}
+                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                  onClick={() => executeRun(runModal, 'local')}
+                  disabled={terminalStatus === 'running'}
+                >
+                  Local Run
+                </button>
+                <button
+                  className={`si-btn ${runMode === 'github' ? 'si-btn-primary' : 'si-btn-ghost'}`}
+                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                  onClick={() => executeRun(runModal, 'github')}
+                  disabled={terminalStatus === 'running'}
+                >
+                  Live Run (GitHub)
+                </button>
+                <button className="si-modal-close" onClick={closeRunModal}>{icons.x}</button>
+              </div>
             </div>
             <div className="si-modal-body" style={{ padding: '16px 24px' }}>
               <div className="si-terminal">
@@ -1033,18 +1090,20 @@ export default function ScriptsInventoryPage() {
                       )}
                     </div>
                   ))}
-                  {terminalStatus === 'running' && terminalLines.length > 0 && (
+                  {terminalStatus === 'running' && (
                     <div className="si-terminal-line" style={{ opacity: 0.5 }}>
-                      <span className="si-spinner" />
+                      <span className="si-spinner" /> Executing...
                     </div>
                   )}
                 </div>
                 <div className="si-terminal-status">
                   <span className={`si-terminal-status-badge ${terminalStatus}`}>
                     {terminalStatus === 'running' ? (
-                      <><span className="si-spinner" /> Running</>
-                    ) : (
+                      <><span className="si-spinner" /> Executing</>
+                    ) : terminalStatus === 'completed' ? (
                       <><span style={{ color: 'var(--si-success)' }}>✓</span> Completed</>
+                    ) : (
+                      <><span style={{ color: 'var(--si-danger)' }}>✗</span> Execution Error</>
                     )}
                   </span>
                   <span className="si-terminal-timer">{terminalTimer.toFixed(1)}s</span>
