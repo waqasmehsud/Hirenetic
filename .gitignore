@@ -1,0 +1,11 @@
+# Environment secrets
+.env.local
+
+# Build output
+.next/
+
+# Dependencies
+node_modules/
+
+# Documentation / MDFiles
+MDFILES/
