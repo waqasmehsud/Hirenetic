@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Hirenetic — AI Resume Screening System',
+  title: 'APP',
   description: 'Advanced AI-powered resume screening and automation platform.',
 };
 

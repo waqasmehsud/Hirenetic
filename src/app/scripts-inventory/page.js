@@ -165,7 +165,7 @@ export default function ScriptsInventoryPage() {
   // ---- Fetch scripts from Supabase ----
   const fetchScripts = useCallback(async () => {
     const { data, error } = await supabase
-      .from('hirenetic_scripts')
+      .from('scriptsEditor')
       .select('*')
       .order('created_at', { ascending: true });
     if (error) {
@@ -228,7 +228,7 @@ export default function ScriptsInventoryPage() {
       code: `# ${addForm.name}\n# Created: ${new Date().toISOString().split('T')[0]}\n\ndef main():\n    pass\n\nif __name__ == "__main__":\n    main()`,
       executions: 0,
     };
-    const { error } = await supabase.from('hirenetic_scripts').insert([newScript]);
+    const { error } = await supabase.from('scriptsEditor').insert([newScript]);
     if (error) return showToast('Failed to add script: ' + error.message, 'error');
     await fetchScripts();
     setAddModal(false);
@@ -268,7 +268,7 @@ export default function ScriptsInventoryPage() {
   const handleSaveEdit = async () => {
     if (!editModal) return;
     const { error } = await supabase
-      .from('hirenetic_scripts')
+      .from('scriptsEditor')
       .update({
         code: editCode,
         name: editSettings.name,
@@ -289,7 +289,7 @@ export default function ScriptsInventoryPage() {
     if (!lockModal) return;
     if (!lockPassword || lockPassword !== lockConfirm) return showToast('Passwords do not match', 'error');
     const { error } = await supabase
-      .from('hirenetic_scripts')
+      .from('scriptsEditor')
       .update({ locked: true, password: lockPassword })
       .eq('id', lockModal.id);
     if (error) return showToast('Failed to lock: ' + error.message, 'error');
@@ -305,7 +305,7 @@ export default function ScriptsInventoryPage() {
     if (!unlockModal) return;
     if (unlockPassword === unlockModal.password) {
       const { error } = await supabase
-        .from('hirenetic_scripts')
+        .from('scriptsEditor')
         .update({ locked: false, password: null })
         .eq('id', unlockModal.id);
       if (error) return showToast('Failed to unlock: ' + error.message, 'error');
@@ -322,7 +322,7 @@ export default function ScriptsInventoryPage() {
   const handleDeleteScript = async () => {
     if (!deleteModal) return;
     const { error } = await supabase
-      .from('hirenetic_scripts')
+      .from('scriptsEditor')
       .delete()
       .eq('id', deleteModal.id);
     if (error) return showToast('Failed to delete: ' + error.message, 'error');
@@ -358,7 +358,7 @@ export default function ScriptsInventoryPage() {
 
     // Increment executions in Supabase
     supabase
-      .from('hirenetic_scripts')
+      .from('scriptsEditor')
       .update({ executions: (script.executions || 0) + 1 })
       .eq('id', script.id)
       .then();
@@ -439,24 +439,94 @@ export default function ScriptsInventoryPage() {
           }),
         });
         const data = await res.json();
-        clearInterval(timerIntervalRef.current);
 
-        if (data.success) {
-          setTerminalLines((prev) => [
-            ...prev,
-            { text: `[SUCCESS] ${data.message}`, type: 'success' },
-            { text: `[URL] GitHub Workflow logs: ${data.workflow_url}`, type: 'accent' },
-            { text: `[exit] GitHub Action dispatched successfully.`, type: 'success' }
-          ]);
-          setTerminalStatus('completed');
-          fetchScripts();
-        } else {
+        if (!data.success) {
+          clearInterval(timerIntervalRef.current);
           setTerminalLines((prev) => [
             ...prev,
             { text: `[ERROR] GitHub API: ${data.error}`, type: 'error' },
             { text: `[exit] Dispatch failed.`, type: 'error' }
           ]);
           setTerminalStatus('failed');
+          return;
+        }
+
+        setTerminalLines((prev) => [
+          ...prev,
+          { text: `[SUCCESS] ${data.message}`, type: 'success' },
+          { text: `[URL] Workflow Link: ${data.workflow_url}`, type: 'accent' },
+          { text: `[poll] Polling live logs from GitHub Actions...`, type: 'info' }
+        ]);
+
+        if (data.run_id) {
+          let pollCount = 0;
+          const maxPolls = 40;
+          let loggedSteps = new Set();
+          let loggedOutputs = new Set();
+
+          runIntervalRef.current = setInterval(async () => {
+            pollCount++;
+            if (pollCount > maxPolls) {
+              clearInterval(runIntervalRef.current);
+              clearInterval(timerIntervalRef.current);
+              setTerminalLines((prev) => [
+                ...prev,
+                { text: `[timeout] Polling reached max limit (120s). Check status on GitHub.`, type: 'info' }
+              ]);
+              setTerminalStatus('completed');
+              return;
+            }
+
+            try {
+              const statusRes = await fetch(`/api/get-github-action-status?run_id=${data.run_id}`);
+              const statusData = await statusRes.json();
+
+              if (statusData.steps && statusData.steps.length > 0) {
+                statusData.steps.forEach((step) => {
+                  const key = `${step.name}_${step.status}_${step.conclusion}`;
+                  if (!loggedSteps.has(key) && step.status === 'completed') {
+                    loggedSteps.add(key);
+                    const isOk = step.conclusion === 'success';
+                    setTerminalLines((prev) => [
+                      ...prev,
+                      { text: `[github-step] ${step.name} -> ${step.conclusion || step.status}`, type: isOk ? 'info' : 'error' }
+                    ]);
+                  }
+                });
+              }
+
+              if (statusData.output && statusData.output.length > 0) {
+                const newLines = [];
+                statusData.output.forEach((outLine) => {
+                  if (!loggedOutputs.has(outLine)) {
+                    loggedOutputs.add(outLine);
+                    newLines.push({ text: outLine, type: 'success' });
+                  }
+                });
+                if (newLines.length > 0) {
+                  setTerminalLines((prev) => [...prev, ...newLines]);
+                }
+              }
+
+              if (statusData.status === 'completed') {
+                clearInterval(runIntervalRef.current);
+                clearInterval(timerIntervalRef.current);
+                const isSuccess = statusData.conclusion === 'success';
+                setTerminalLines((prev) => [
+                  ...prev,
+                  { text: `[exit] GitHub Action run completed (${statusData.conclusion}).`, type: isSuccess ? 'success' : 'error' }
+                ]);
+                setTerminalStatus(isSuccess ? 'completed' : 'failed');
+                fetchScripts();
+              }
+            } catch {
+              // Ignore single poll error
+            }
+          }, 3000);
+        } else {
+          clearInterval(timerIntervalRef.current);
+          setTerminalStatus('completed');
+          fetchScripts();
         }
       } catch (err) {
         clearInterval(timerIntervalRef.current);
@@ -560,15 +630,14 @@ export default function ScriptsInventoryPage() {
         <div className="si-topbar-left">
           <div className="si-brand">
             <div className="si-brand-icon">{icons.atom}</div>
-            <span>Hirenetic</span>
           </div>
           <div className="si-brand-divider" />
           <div>
-            <div className="si-page-title">Custom Scripts Inventory</div>
+            <div className="si-page-title">Custom Scripts</div>
             <div className="si-breadcrumb">
               Admin <span className="si-breadcrumb-sep">/</span>
               <span>Automation</span> <span className="si-breadcrumb-sep">/</span>
-              <span>Scripts Inventory</span>
+              <span>CustomScripts</span>
             </div>
           </div>
         </div>

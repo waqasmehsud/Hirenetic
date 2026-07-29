@@ -23,14 +23,24 @@ export async function POST(req) {
 
     // Execute python command locally with 30s timeout
     const result = await new Promise((resolve) => {
-      const command = `python "${tmpFilePath}"`;
-      exec(command, { timeout: 30000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
-        resolve({
-          error,
-          stdout: stdout ? stdout.toString() : '',
-          stderr: stderr ? stderr.toString() : '',
+      const primaryCmd = process.platform === 'win32' ? 'python' : 'python3';
+      const secondaryCmd = process.platform === 'win32' ? 'python3' : 'python';
+
+      const runWithCmd = (cmd) => {
+        exec(`${cmd} "${tmpFilePath}"`, { timeout: 30000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+          if (error && error.code === 127 && cmd === primaryCmd) {
+            // If primary command not found (code 127), try secondary command
+            return runWithCmd(secondaryCmd);
+          }
+          resolve({
+            error,
+            stdout: stdout ? stdout.toString() : '',
+            stderr: stderr ? stderr.toString() : '',
+          });
         });
-      });
+      };
+
+      runWithCmd(primaryCmd);
     });
 
     // Cleanup temp file
