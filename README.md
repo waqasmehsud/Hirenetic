@@ -52,7 +52,7 @@ Open **[http://localhost:3000/scripts-inventory](http://localhost:3000/scripts-i
 ## 📂 Project Structure
 
 ```text
-hirenetic/
+SummerInternship_AirUni/
 ├── .github/workflows/         # CI/CD and script runner GitHub Actions
 ├── MDFILES/                   # Specifications & module documentation
 ├── SQL_SCHEMA/                # Database table schemas (.sql)
