@@ -1,6 +1,6 @@
 # Step 1: Base image
 FROM node:20-alpine AS base
-RUN apk add --no-cache python3 py3-pip && ln -sf /usr/bin/python3 /usr/bin/python
+RUN apk add --no-cache python3 py3-pip && ln -sf /usr/bin/python3 /usr/bin/python && pip install --break-system-packages --no-cache-dir requests beautifulsoup4
 
 # Step 2: Install dependencies
 FROM base AS deps

@@ -21,6 +21,40 @@ export async function POST(req) {
     // Write code to temporary file
     await fs.writeFile(tmpFilePath, script_code, 'utf8');
 
+    // Auto-detect and install missing third-party python imports dynamically
+    const stdlib = new Set([
+      'os', 'sys', 'time', 'json', 're', 'math', 'datetime', 'random',
+      'typing', 'pathlib', 'sqlite3', 'collections', 'itertools', 'textwrap',
+      'urllib', 'http', 'functools', 'copy', 'hashlib', 'string'
+    ]);
+    const pipMap = {
+      bs4: 'beautifulsoup4',
+      cv2: 'opencv-python',
+      sklearn: 'scikit-learn',
+      PIL: 'Pillow'
+    };
+
+    const importMatches = script_code.matchAll(/^(?:import|from)\s+([a-zA-Z0-9_]+)/gm);
+    const toInstall = new Set();
+    for (const match of importMatches) {
+      const mod = match[1];
+      if (!stdlib.has(mod)) {
+        toInstall.add(pipMap[mod] || mod);
+      }
+    }
+
+    if (toInstall.size > 0) {
+      const pkgs = Array.from(toInstall).join(' ');
+      const isWin = process.platform === 'win32';
+      const installCmd = isWin
+        ? `python -m pip install ${pkgs}`
+        : `python3 -m pip install --break-system-packages ${pkgs}`;
+
+      await new Promise((resolve) => {
+        exec(installCmd, { timeout: 60000 }, () => resolve());
+      });
+    }
+
     // Execute python command locally with 30s timeout
     const result = await new Promise((resolve) => {
       const primaryCmd = process.platform === 'win32' ? 'python' : 'python3';
