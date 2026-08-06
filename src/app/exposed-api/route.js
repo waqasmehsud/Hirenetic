@@ -84,8 +84,15 @@ export async function GET(request) {
 
     const clientApiKey = apiKeyFromHeader || apiKeyFromQuery
 
-    // 2. Environment Variable Validation (with fallback)
-    const expectedApiKey = process.env.EXPOSED_API_KEY || process.env.NEXT_PUBLIC_EXPOSED_API_KEY || 'my_secure_api_key_2026'
+    // 2. Environment Variable Validation (fail-fast, no hardcoded fallback)
+    const expectedApiKey = process.env.EXPOSED_API_KEY || process.env.NEXT_PUBLIC_EXPOSED_API_KEY
+
+    if (!expectedApiKey) {
+      return Response.json(
+        { success: false, error: 'Server misconfiguration: API key not set in environment variables' },
+        { status: 500 }
+      )
+    }
 
     // 3. Timing-Safe API Key Authentication Check
     if (!clientApiKey || !safeCompare(clientApiKey, expectedApiKey)) {

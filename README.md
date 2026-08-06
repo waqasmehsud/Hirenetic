@@ -21,19 +21,20 @@ It seamlessly connects Candidates, HR Recruiters, and Platform Administrators in
 - **Interactive Match Analytics**: Score breakdown pills (`Skills %`, `Domain %`, `Experience %`, `Projects %`) alongside AI-generated Pro Candidate Tips.
 
 ### 2. 💼 HR Recruiter Panel (`/hr-panel`)
-- **Job Posting & Open/Closed Position Settings**:
-  - Create new job openings with explicit **Initial Position Settings** (`🟢 Open Position` vs `🔴 Closed Position`).
+- **Job Posting & Position Management**:
+  - Create new job openings with explicit initial status (`🟢 Open` vs `🔴 Closed`).
   - Live real-time status toggle (`Close` / `Reopen`) with automatic Supabase database synchronization (`crwl_jobsData`).
-- **Candidate Detail Widget (`CandidateDetailModal.js`)**:
-  - **3-Column Workspace Grid**: Left Profile Sidebar, Expanded Center Resume & Details View, and Right AI Insights Panel (Confidence rating, Skill Gaps, Malware Threat Audit, GitHub Quality Index).
-  - **8 Interactive Sub-Tabs**: `Timeline` | `Notes` | `Interview` | `Documents` | `Activity` | `History` | `Emails` | `AI Chat`.
-  - **Recruiter AI Chat Assistant**: Interactive AI assistant to ask instant questions about candidate backgrounds.
-- **Applicants & Talent Pool View**: Real-time applicant counts per job card, job-specific filtering, direct HR application badges, and talent pool bookmarking.
+- **Master Candidate 360° Hub Widget (`CandidateDetailModal.js`)**:
+  - **4-Tab Compact Hub**: `360° Profile` | `AI Verification & GitHub` | `Recruiter AI Assistant` | `HR Notes & Tags`.
+  - **Live GitHub Verification**: Deep dive into GitHub public repos, star count, top languages, account age, and evidence comparison table.
+  - **Recruiter AI Chat Assistant**: Interactive Groq LLM Assistant (`llama-3.3-70b-versatile`) with dynamic candidate context parsing.
+- **Talent Pool Management**: Real-time applicant filtering, saved candidate talent pool with 1-click **Remove from Talent Pool** action.
 
 ### 3. 🛡️ Admin Management Panel (`/admin-panel`)
-- **Ultra-Compact Minimal Design**: Sleek 220px sidebar, 54px header, non-bulky layout system with crisp borders.
-- **Live Supabase Entity Analytics**: Real-time query counters for candidates (`candidates_profiles`), recruiters (`employers_profiles`), active job postings (`crwl_jobsData`), tracked applications (`job_applications`), and automation scripts (`scriptsEditor`).
-- **Direct System Portal Links**: Quick navigation shortcuts to **API Management** and **Script Editor**.
+- **Admin Security Passcode Access Lock**:
+  - Protected with a sleek Admin Security Passcode Lock screen (`Default Passcode: admin123`).
+  - Passcode management in Admin Settings to easily update and store custom passcodes.
+- **Live Supabase Entity Analytics**: Real-time query counters for candidates (`candidates_profiles`), recruiters (`employers_profiles`), active job postings (`crwl_jobsData`), tracked applications (`job_applications`), and automation scripts.
 
 ### 4. 🔑 API Management Panel (`/apimanagement-panel`)
 - **Real-Time LLM Quota Tracking**: Automatically tracks token calls and inference requests (`used_quota` / `daily_quota`) whenever Groq, OpenAI, or Gemini APIs run candidate recommendations or CV parsing.
@@ -107,7 +108,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 ### Deploying to Vercel (1-Click)
 1. Push code to your GitHub repository.
 2. Import project on [Vercel.com](https://vercel.com).
-3. Set the Environment Variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+3. Set Environment Variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 4. Click **Deploy**!
 
 ### Deploying with Docker
@@ -122,17 +123,17 @@ Access the containerized application at `http://localhost:3000`.
 
 ```text
 Hirenetic/
-├── MDFILES/                   # System documentation & architectural guides
-├── SQL_SCHEMA/                # Database SQL schemas & migrations
+├── Mdfiles/                   # System documentation & architectural guides
+├── schema/                    # Database SQL schemas & migrations
 ├── public/                    # Static assets & public images
 ├── src/
 │   ├── app/
-│   │   ├── admin-panel/       # Admin console, stats API & minimal CSS
+│   │   ├── admin-panel/       # Admin console, stats API, lock screen & settings
 │   │   ├── apimanagement-panel/# Real-time API key quota tracker & manager
 │   │   ├── candidate-panel/   # Candidate Portal, CV parser & AI recommendation API
 │   │   ├── cross-matching/    # Multi-dimensional matching verification
 │   │   ├── exposed-api/       # Public developer API endpoints
-│   │   ├── hr-panel/          # HR Panel, Candidate Detail Widget & Applicants view
+│   │   ├── hr-panel/          # HR Panel, Master Candidate 360 Hub & Applicants view
 │   │   ├── scripts-inventory/ # Script editor & Python runner
 │   │   ├── globals.css        # Core global styles
 │   │   ├── layout.js          # Root layout

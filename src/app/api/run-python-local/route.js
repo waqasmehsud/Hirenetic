@@ -3,11 +3,38 @@ import { exec } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req) {
   let tmpFilePath = null;
 
   try {
+    // ── Auth Guard: Verify Supabase session before allowing execution ──
+    const authHeader = req.headers.get('authorization');
+    const token = authHeader?.replace(/^Bearer\s+/i, '');
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Missing authentication token' },
+        { status: 401 }
+      );
+    }
+
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Invalid or expired session' },
+        { status: 401 }
+      );
+    }
+    // ── End Auth Guard ──
+
     const { script_code, script_filename } = await req.json();
 
     if (!script_code) {

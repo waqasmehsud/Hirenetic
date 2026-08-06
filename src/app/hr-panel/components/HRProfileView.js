@@ -80,12 +80,25 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
 
   const avatarInitials = (formData.name || 'HR').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
+  const [newPasscode, setNewPasscode] = useState('');
+
+  const handleUpdatePasscode = () => {
+    if (!newPasscode.trim()) {
+      alert('Please enter a valid passcode.');
+      return;
+    }
+    localStorage.setItem('hr_admin_passcode', newPasscode.trim());
+    setNewPasscode('');
+    if (addToast) addToast('success', 'Passcode Updated', 'Admin Security Passcode updated successfully.');
+    else alert('Admin Passcode updated successfully!');
+  };
+
   return (
     <section className="view-section active">
       <div className="view-header-bar flex-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>HR Company Profile</h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>Manage your recruiter identity, enterprise details, and branding.</p>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>HR Company Profile & Security</h2>
+          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>Manage your recruiter identity, enterprise details, and admin security passcode.</p>
         </div>
       </div>
 
@@ -93,77 +106,68 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
         
         {/* Banner Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingBottom: '24px', marginBottom: '24px', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#2563eb', color: '#ffffff', fontSize: '22px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyCenter: 'center', shrink: 0 }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#2563eb', color: '#ffffff', fontSize: '22px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', shrink: 0 }}>
             {avatarInitials}
           </div>
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: 0 }}>{formData.company || 'Company Name'}</h3>
-            <div style={{ fontSize: '13px', color: '#64748b', marginTop: '4px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <span><User size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> {formData.name || 'Recruiter'} ({formData.designation})</span>
-              <span><Building2 size={13} style={{ display: 'inline', verticalAlign: 'middle' }} /> {formData.industry}</span>
-            </div>
+            <p style={{ fontSize: '13px', color: '#64748b', margin: '2px 0 0 0' }}>{formData.name} • {formData.designation}</p>
           </div>
         </div>
 
         {successMsg && (
-          <div style={{ padding: '12px 16px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px', color: '#065f46', fontSize: '13px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={16} />
-            <span>{successMsg}</span>
+          <div style={{ padding: '12px 16px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', borderRadius: '10px', fontSize: '13px', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} /> {successMsg}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Recruiter Full Name</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Full Name</label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 required
-                placeholder="e.g. Sarah Jenkins"
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>HR Title / Designation</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Account Email (Read-Only)</label>
               <input
-                type="text"
-                name="designation"
-                value={formData.designation}
-                onChange={handleChange}
-                required
-                placeholder="e.g. Lead HR Recruiter"
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                type="email"
+                name="email"
+                value={formData.email}
+                disabled
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', background: '#f1f5f9', color: '#64748b' }}
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Company / Enterprise Name</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Company / Organization Name</label>
               <input
                 type="text"
                 name="company"
                 value={formData.company}
                 onChange={handleChange}
                 required
-                placeholder="e.g. CyberLedger / Hirenetic Corp"
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Work Email Address (Read-Only)</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>HR Designation / Title</label>
               <input
-                type="email"
-                name="email"
-                value={formData.email}
-                disabled
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', background: '#f1f5f9', color: '#64748b', cursor: 'not-allowed' }}
+                type="text"
+                name="designation"
+                value={formData.designation}
+                onChange={handleChange}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               />
             </div>
           </div>
@@ -175,13 +179,13 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
                 name="industry"
                 value={formData.industry}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               >
-                <option value="Cybersecurity">Cybersecurity & SecOps</option>
-                <option value="Software Engineering">Software Engineering</option>
-                <option value="AI & Machine Learning">AI & Machine Learning</option>
-                <option value="Cloud & DevOps">Cloud & DevOps</option>
-                <option value="FinTech & Enterprise">FinTech & Enterprise</option>
+                <option value="Cybersecurity">Cybersecurity & SOC</option>
+                <option value="Software Development">Software Development</option>
+                <option value="Artificial Intelligence">AI & Data Science</option>
+                <option value="Fintech">Fintech</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
@@ -191,12 +195,13 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
                 name="company_size"
                 value={formData.company_size}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '13.5px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               >
-                <option value="1-10">1-10 Employees</option>
-                <option value="11-50">11-50 Employees</option>
-                <option value="51-200">51-200 Employees</option>
-                <option value="200+">200+ Enterprise</option>
+                <option value="1-10">1-10 employees</option>
+                <option value="11-50">11-50 employees</option>
+                <option value="51-200">51-200 employees</option>
+                <option value="201-500">201-500 employees</option>
+                <option value="500+">500+ employees</option>
               </select>
             </div>
           </div>
@@ -213,19 +218,16 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               />
             </div>
-
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Company Location / City</label>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Location / City</label>
               <input
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                placeholder="e.g. Islamabad, Pakistan"
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               />
             </div>
-
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Website URL</label>
               <input
@@ -233,7 +235,6 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
                 name="website_url"
                 value={formData.website_url}
                 onChange={handleChange}
-                placeholder="https://company.com"
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
               />
             </div>
@@ -251,6 +252,34 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
           </div>
 
         </form>
+
+        {/* Admin Security Passcode Section */}
+        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed #cbd5e1' }}>
+          <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Building2 size={16} style={{ color: '#2563eb' }} /> Admin Security Passcode
+          </h4>
+          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 14px' }}>
+            Set or update the passcode required to access the HR Panel lock screen.
+          </p>
+
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="password"
+              placeholder="Enter new admin passcode..."
+              value={newPasscode}
+              onChange={(e) => setNewPasscode(e.target.value)}
+              style={{ width: '260px', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
+            />
+            <button
+              type="button"
+              onClick={handleUpdatePasscode}
+              style={{ padding: '9px 16px', borderRadius: '8px', background: '#0f172a', color: '#ffffff', fontSize: '12.5px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
+            >
+              Update Passcode
+            </button>
+          </div>
+        </div>
+
       </div>
     </section>
   );

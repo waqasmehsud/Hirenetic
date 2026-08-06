@@ -70,7 +70,7 @@ export default function Sidebar({
           onClick={() => setActiveView('all-candidates')}
         >
           <UserCheck size={16} />
-          <span>All Candidates (DB)</span>
+          <span>Candidates DB</span>
           <span className="badge badge-primary" id="nav-db-candidates-count">{realCandidatesCount || 0}</span>
         </button>
         <button
@@ -96,35 +96,14 @@ export default function Sidebar({
           <Bookmark size={16} />
           <span>Talent Pool</span>
         </button>
-        <button
-          className={`nav-item ${activeView === 'comparison' ? 'active' : ''}`}
-          onClick={() => setActiveView('comparison')}
-        >
-          <Columns size={16} />
-          <span>Candidate Compare</span>
-        </button>
 
-        <div className="nav-section-title">Company & Settings</div>
+        <div className="nav-section-title">Account</div>
         <button
           className={`nav-item ${activeView === 'profile' ? 'active' : ''}`}
           onClick={() => setActiveView('profile')}
         >
           <Building2 size={16} />
-          <span>HR Profile</span>
-        </button>
-        <button
-          className={`nav-item ${activeView === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveView('settings')}
-        >
-          <Settings size={16} />
-          <span>Settings</span>
-        </button>
-        <button
-          className={`nav-item ${activeView === 'audit-logs' ? 'active' : ''}`}
-          onClick={() => setActiveView('audit-logs')}
-        >
-          <ShieldCheck size={16} />
-          <span>Security & Audit</span>
+          <span>HR Profile & Settings</span>
         </button>
       </nav>
 

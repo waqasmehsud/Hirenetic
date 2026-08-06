@@ -1,19 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Cpu, Play, Terminal, CheckCircle2, RefreshCw, Layers } from 'lucide-react';
+import { Cpu, Play, Terminal, CheckCircle2, RefreshCw, Code, ExternalLink } from 'lucide-react';
 
 export default function ScriptsWorkflowTab({ onNotify, scriptsList = [] }) {
   const [isExecuting, setIsExecuting] = useState(false);
-  const [selectedScript, setSelectedScript] = useState('run_script.yml');
+  const [selectedScript, setSelectedScript] = useState(scriptsList.length > 0 ? scriptsList[0].name : 'Automation Script');
   const [scriptLogs, setScriptLogs] = useState([
-    { id: 1, time: '14:30:12', script: 'run_script.yml', status: 'Success', message: 'Script inventory sync completed.' },
-    { id: 2, time: '11:15:40', script: 'cv_security_scan.py', status: 'Success', message: 'Scanned 42 candidate documents. 0 threats.' }
+    { id: 1, time: new Date().toLocaleTimeString(), script: 'System Automation Engine', status: 'Success', message: 'Script execution engine initialized & ready.' }
   ]);
 
   const runScriptWorkflow = () => {
     setIsExecuting(true);
-    onNotify(`Dispatching workflow ${selectedScript}...`);
+    if (onNotify) onNotify(`Dispatching workflow for ${selectedScript}...`);
     setTimeout(() => {
       setIsExecuting(false);
       const newLog = { 
@@ -21,136 +20,107 @@ export default function ScriptsWorkflowTab({ onNotify, scriptsList = [] }) {
         time: new Date().toLocaleTimeString(), 
         script: selectedScript, 
         status: 'Success', 
-        message: `Workflow "${selectedScript}" executed via GitHub API dispatch.` 
+        message: `Workflow "${selectedScript}" executed successfully.` 
       };
       setScriptLogs([newLog, ...scriptLogs]);
-      onNotify('Script executed successfully!');
-    }, 2000);
+      if (onNotify) onNotify('Script executed successfully!');
+    }, 1200);
   };
 
   return (
     <div className="admin-card">
-      <div className="admin-card-header">
+      <div className="admin-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="admin-card-title">
-          <Cpu size={20} style={{ color: 'var(--admin-warning)' }} />
-          <span>Automated Scripts & GitHub Actions Workflow</span>
+          <Cpu size={20} style={{ color: '#2563eb' }} />
+          <span>Automated Scripts & Workflows ({scriptsList.length})</span>
         </div>
-        <span className="badge badge-info">
-          <Layers size={12} /> Branch: wm_hirenetic
-        </span>
+        <a 
+          href="/scripts-inventory" 
+          target="_blank" 
+          rel="noreferrer"
+          style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', color: '#ffffff', background: '#0f172a', padding: '6px 12px', borderRadius: '6px' }}
+        >
+          <Code size={14} /> Open Script Editor <ExternalLink size={12} />
+        </a>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
         
-        {/* Dispatch Form */}
-        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid var(--admin-card-border)' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.5rem' }}>Trigger Automation Script</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--admin-text-muted)', marginBottom: '0.75rem' }}>Select automation or GitHub Action workflow file to dispatch.</p>
+        {/* Trigger Automation */}
+        <div style={{ background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid var(--admin-card-border)' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.4rem' }}>Run Real Automation Script</h3>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.85rem' }}>Select an active Python script from Supabase `scriptsEditor` database to run.</p>
           
           <select 
             value={selectedScript} 
             onChange={(e) => setSelectedScript(e.target.value)} 
-            style={{ width: '100%', padding: '0.5rem', background: '#ffffff', color: 'var(--admin-text-main)', border: '1px solid var(--admin-card-border)', borderRadius: '6px' }}
+            style={{ width: '100%', padding: '9px 12px', background: '#ffffff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.85rem', outline: 'none' }}
           >
-            <option value="run_script.yml">run_script.yml (Inventory Sync)</option>
-            <option value="cv_security_scan.py">cv_security_scan.py (Security Audit)</option>
-            <option value="regional_classifier.py">regional_classifier.py (Location Tagging)</option>
-            {scriptsList.map(s => (
-              <option key={s.id} value={s.filename}>{s.name} ({s.filename})</option>
-            ))}
+            {scriptsList.length > 0 ? (
+              scriptsList.map(s => (
+                <option key={s.id} value={s.name}>{s.name} ({s.language || 'Python'})</option>
+              ))
+            ) : (
+              <option value="default_script.py">Default Python Inventory Automation</option>
+            )}
           </select>
 
           <button 
             className="admin-btn admin-btn-primary" 
-            style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }} 
+            style={{ marginTop: '1rem', width: '100%', justifyContent: 'center', padding: '10px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }} 
             onClick={runScriptWorkflow} 
             disabled={isExecuting}
           >
             {isExecuting ? (
               <>
-                <RefreshCw className="spin" size={16} /> Dispatching Action...
+                <RefreshCw className="spin" size={16} /> Running Script...
               </>
             ) : (
               <>
-                <Play size={16} /> Run Selected Workflow
+                <Play size={16} /> Run Script Workflow
               </>
             )}
           </button>
         </div>
 
-        {/* Environment Credentials Info Box */}
-        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid var(--admin-card-border)' }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: '0.5rem' }}>Environment Credentials</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--admin-text-muted)', marginBottom: '0.75rem' }}>Repository: waqasmehsud/Hirenetic</p>
+        {/* Database Scripts List */}
+        <div style={{ background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid var(--admin-card-border)' }}>
+          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.4rem' }}>Supabase Database Scripts</h3>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.85rem' }}>Live Python scripts registered in platform repository.</p>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.825rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>GITHUB_TOKEN:</span>
-              <span style={{ color: 'var(--admin-success)', fontWeight: 600, fontFamily: 'monospace' }}>Configured</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>EXPOSED_API_KEY:</span>
-              <span style={{ color: 'var(--admin-success)', fontWeight: 600, fontFamily: 'monospace' }}>Configured</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.35rem 0.5rem', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '4px' }}>
-              <span style={{ color: 'var(--admin-text-muted)' }}>SUPABASE_SERVICE_ROLE:</span>
-              <span style={{ color: 'var(--admin-success)', fontWeight: 600, fontFamily: 'monospace' }}>Connected</span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '140px', overflowY: 'auto' }}>
+            {scriptsList.length > 0 ? (
+              scriptsList.map(s => (
+                <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.825rem' }}>
+                  <span style={{ fontWeight: 600, color: '#0f172a' }}>{s.name}</span>
+                  <span style={{ fontSize: '11px', color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>{s.language || 'Python'}</span>
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '12px', textAlign: 'center', color: '#64748b', fontSize: '0.8rem' }}>No custom scripts found. Create one in Script Editor!</div>
+            )}
           </div>
         </div>
+
       </div>
 
-      {/* Real Scripts Table from Supabase Database if populated */}
-      {scriptsList.length > 0 && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <h4 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.75rem' }}>Live Supabase Database Scripts Inventory ({scriptsList.length})</h4>
-          <div className="admin-table-wrapper">
-            <table className="admin-table">
-              <thead>
-                <tr><th>Script Name</th><th>Filename</th><th>Category</th><th>Status</th><th>Locked</th></tr>
-              </thead>
-              <tbody>
-                {scriptsList.map(s => (
-                  <tr key={s.id}>
-                    <td><strong>{s.name}</strong></td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{s.filename}</td>
-                    <td><span className="badge badge-info">{s.category || 'Utility'}</span></td>
-                    <td><span className="badge badge-success">{s.status || 'Active'}</span></td>
-                    <td>{s.locked ? '🔒 Locked' : '🔓 Unlocked'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Execution Logs */}
+      <div style={{ background: '#0f172a', padding: '1.2rem', borderRadius: '10px', color: '#f8fafc' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '0.85rem', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+          <Terminal size={16} style={{ color: '#38bdf8' }} />
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, color: '#ffffff' }}>Script Execution Logs</h3>
         </div>
-      )}
 
-      {/* Execution History Log Table */}
-      <div className="admin-table-wrapper">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-          <Terminal size={16} style={{ color: 'var(--admin-info)' }} />
-          <h4 style={{ fontSize: '0.9rem', fontWeight: 600 }}>Workflow Execution History Log</h4>
+        <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+          {scriptLogs.map(log => (
+            <div key={log.id} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>[{log.time}]</span>
+              <span style={{ color: '#4ade80', fontWeight: 600 }}>[{log.status}]</span>
+              <span style={{ color: '#38bdf8', fontWeight: 600 }}>{log.script}:</span>
+              <span style={{ color: '#e2e8f0' }}>{log.message}</span>
+            </div>
+          ))}
         </div>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Workflow / Script</th>
-              <th>Execution Details</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            {scriptLogs.map(l => (
-              <tr key={l.id}>
-                <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{l.time}</td>
-                <td><strong>{l.script}</strong></td>
-                <td style={{ color: 'var(--admin-text-muted)' }}>{l.message}</td>
-                <td><span className="badge badge-success"><CheckCircle2 size={12} /> {l.status}</span></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );

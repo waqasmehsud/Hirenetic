@@ -370,9 +370,13 @@ export default function ScriptsInventoryPage() {
       ]);
 
       try {
+        const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch('/api/run-python-local', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || ''}`
+          },
           body: JSON.stringify({
             script_code: script.code,
             script_filename: script.filename,
@@ -576,9 +580,13 @@ export default function ScriptsInventoryPage() {
   const handleRunTest = async () => {
     setConsoleOutput('[init] Executing code payload on local Python runtime...\n');
     try {
+      const { data: { session: testSession } } = await supabase.auth.getSession();
       const res = await fetch('/api/run-python-local', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${testSession?.access_token || ''}`
+        },
         body: JSON.stringify({
           script_code: editCode,
           script_filename: editSettings.filename || 'script.py',

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import './styles.css';
 import { supabase } from './supabase';
 
+import { Key, Lock, Eye, EyeOff, AlertCircle, ShieldCheck } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import DashboardView from './components/DashboardView';
@@ -13,6 +14,7 @@ import ApplicantsView from './components/ApplicantsView';
 import AllCandidatesView from './components/AllCandidatesView';
 import TalentPoolView from './components/TalentPoolView';
 import ComparisonView from './components/ComparisonView';
+import CandidateVerificationView from './components/CandidateVerificationView';
 import AuditLogsView from './components/AuditLogsView';
 import HRProfileView from './components/HRProfileView';
 import SettingsView from './components/SettingsView';
@@ -29,6 +31,35 @@ export default function HRPanelPage() {
   // Auth & User Session State
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // Admin Passcode Security State
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState('');
+  const [passcodeError, setPasscodeError] = useState('');
+  const [showPasscodeText, setShowPasscodeText] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const unlocked = localStorage.getItem('hr_admin_unlocked') === 'true' || sessionStorage.getItem('hr_admin_unlocked') === 'true';
+      setIsAdminUnlocked(unlocked);
+    }
+  }, []);
+
+  const handleUnlockAdmin = (e) => {
+    e?.preventDefault();
+    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('hr_admin_passcode')) || 'admin123';
+    if (passcodeInput.trim() === storedPasscode.trim()) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('hr_admin_unlocked', 'true');
+        localStorage.setItem('hr_admin_unlocked', 'true');
+      }
+      setIsAdminUnlocked(true);
+      setPasscodeError('');
+      if (typeof addToast === 'function') addToast('success', 'Admin Access Granted', 'Security passcode verified successfully.');
+    } else {
+      setPasscodeError('Incorrect Admin Passcode. Access Denied.');
+    }
+  };
 
   // Main Data States
   const [jobs, setJobs] = useState([]);
@@ -576,6 +607,21 @@ export default function HRPanelPage() {
                 setActiveCandidateId(id);
                 setIsCandidateModalOpen(true);
               }}
+              onRemoveFromTalentPool={async (candId) => {
+                try {
+                  if (supabase && candId) {
+                    await supabase
+                      .from('candidates')
+                      .update({ in_talent_pool: false })
+                      .eq('id', candId);
+                  }
+                  setRealCandidates(prev => prev.map(c => c.id === candId ? { ...c, in_talent_pool: false, inTalentPool: false } : c));
+                  setApplicants(prev => prev.filter(a => a.id !== candId && a.candidateId !== candId));
+                  addToast('info', 'Removed from Talent Pool', 'Candidate removed from your saved talent pool.');
+                } catch (err) {
+                  console.error('Failed to remove candidate from talent pool:', err);
+                }
+              }}
             />
           )}
 
@@ -586,6 +632,17 @@ export default function HRPanelPage() {
               setCompareId1={setCompareId1}
               compareId2={compareId2}
               setCompareId2={setCompareId2}
+            />
+          )}
+
+          {activeView === 'verification' && (
+            <CandidateVerificationView
+              realCandidates={realCandidates}
+              onSelectCandidate={(candObj) => {
+                setSelectedCandidateObject(candObj);
+                setActiveCandidateId(candObj.id);
+                setIsCandidateModalOpen(true);
+              }}
             />
           )}
 
