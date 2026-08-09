@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CandidateDetailModal from '../../hr-panel/components/CandidateDetailModal';
 
-export default function EmbedCandidateWidgetPage() {
+export const dynamic = 'force-dynamic';
+
+function EmbedCandidateWidgetContent() {
   const searchParams = useSearchParams();
   const candidateId = searchParams.get('candidate_id') || searchParams.get('id');
   const email = searchParams.get('email');
@@ -45,9 +47,7 @@ export default function EmbedCandidateWidgetPage() {
     <div style={{ width: '100%', height: '100vh', background: '#ffffff', overflow: 'auto', position: 'relative' }}>
       {isLoading ? (
         <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', color: '#0f172a', fontSize: '14px', fontWeight: 600, fontFamily: 'sans-serif', gap: '10px' }}>
-          <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #2563eb', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
           Loading Candidate Verified Profile...
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
       ) : errorMsg ? (
         <div style={{ padding: '32px', textAlign: 'center', fontFamily: 'sans-serif', color: '#ef4444' }}>
@@ -69,5 +69,13 @@ export default function EmbedCandidateWidgetPage() {
         <div style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>No candidate data available.</div>
       )}
     </div>
+  );
+}
+
+export default function EmbedCandidateWidgetPage() {
+  return (
+    <Suspense fallback={<div style={{ width: '100%', height: '100vh', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
+      <EmbedCandidateWidgetContent />
+    </Suspense>
   );
 }

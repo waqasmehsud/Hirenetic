@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CandidateDetailModal from '../hr-panel/components/CandidateDetailModal';
 
-export default function StandaloneCandidateWidgetPage() {
+export const dynamic = 'force-dynamic';
+
+function CandidateWidgetContent() {
   const searchParams = useSearchParams();
   const candidateId = searchParams.get('candidate_id') || searchParams.get('id');
   const email = searchParams.get('email');
@@ -45,7 +47,6 @@ export default function StandaloneCandidateWidgetPage() {
     <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
       {isLoading ? (
         <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500" />
           Loading Exposed Candidate Widget Payload...
         </div>
       ) : errorMsg ? (
@@ -64,5 +65,13 @@ export default function StandaloneCandidateWidgetPage() {
         <div style={{ color: '#94a3b8', fontSize: '14px' }}>No candidate data available.</div>
       )}
     </div>
+  );
+}
+
+export default function StandaloneCandidateWidgetPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#0f172a', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Candidate Widget...</div>}>
+      <CandidateWidgetContent />
+    </Suspense>
   );
 }
