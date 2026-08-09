@@ -17,7 +17,7 @@ export default function HRLoginPage() {
   React.useEffect(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('hr_user') : null
     if (stored) {
-      router.push('/hr-panel')
+      router.replace('/hr-panel')
     }
   }, [router])
 
@@ -50,12 +50,14 @@ export default function HRLoginPage() {
 
       const userId = authData.user.id
 
-      // 2. Strict Database Verification in 'employers_profiles' Table
-      const { data: employerProfile, error: profileErr } = await supabase
+      // 2. Database Verification in 'employers_profiles' Table
+      const cleanEmail = email.trim().toLowerCase()
+      const { data: employerProfiles, error: profileErr } = await supabase
         .from('employers_profiles')
         .select('*')
-        .eq('id', userId)
-        .single()
+        .or(`id.eq.${userId},email.eq.${cleanEmail}`)
+
+      const employerProfile = (employerProfiles && employerProfiles.length > 0) ? employerProfiles[0] : null
 
       // Strict Rule: If not in employers_profiles DB table, DENY ACCESS!
       if (profileErr || !employerProfile) {
@@ -79,7 +81,7 @@ export default function HRLoginPage() {
       }
 
       localStorage.setItem('hr_user', JSON.stringify(hrSession))
-      router.push('/hr-panel')
+      router.replace('/hr-panel')
     } catch (err) {
       console.error('HR Login Error:', err)
       setErrorMsg('An error occurred. Please verify your internet and try again.')

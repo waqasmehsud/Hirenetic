@@ -4,7 +4,8 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import { isPakistanJob } from '../regionFilter'
 import { jobMatchesField } from '../fieldClassifier'
-import { Briefcase, MapPin, Phone, Mail, Award, FolderGit2, Sparkles, ExternalLink, RefreshCw, Eye, FileText, X, CheckCircle2, MinusCircle, Target, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Briefcase, MapPin, Phone, Mail, Award, FolderGit2, Sparkles, ExternalLink, RefreshCw, Eye, FileText, X, CheckCircle2, MinusCircle, Target, ArrowRight, ChevronDown, ChevronUp, FileSearch, Play } from 'lucide-react'
+import ExplainableMatchModal from './ExplainableMatchModal'
 
 export default function DashboardTab({
   rawJobs,
@@ -19,6 +20,7 @@ export default function DashboardTab({
 }) {
   const [showResumeModal, setShowResumeModal] = useState(false)
   const [expandedJobId, setExpandedJobId] = useState(null)
+  const [selectedJobForModal, setSelectedJobForModal] = useState(null)
 
   // Internal HR Job Application State
   const [selectedInternalJobForApply, setSelectedInternalJobForApply] = useState(null)
@@ -377,18 +379,15 @@ export default function DashboardTab({
         </>
       )}
 
-      {/* 2. LLM Recommendation Control Banner */}
+      {/* 2. Recommendation Engine Control Banner */}
       <div className="dashboard-card" style={{ padding: '16px 20px', background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)', color: '#ffffff', borderRadius: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
               <Sparkles size={18} style={{ color: '#a855f7' }} />
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>
-                LLM AI Job Recommendation Engine
+                Recommendation Engine
               </h2>
-              <span style={{ fontSize: '10px', fontWeight: '700', background: 'rgba(168,85,247,0.25)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.4)', padding: '2px 8px', borderRadius: '12px', textTransform: 'uppercase' }}>
-                Gemini & Groq
-              </span>
             </div>
             <p style={{ color: '#94a3b8', fontSize: '12px', margin: 0 }}>
               AI analyzes your Skills, Experience, Education, Projects & Certifications against live openings.
@@ -398,6 +397,7 @@ export default function DashboardTab({
           <button
             onClick={handleRunLlmRecommendations}
             disabled={loadingLlm}
+            title="Run Recommendation Engine"
             style={{
               padding: '8px 16px',
               borderRadius: '8px',
@@ -412,8 +412,12 @@ export default function DashboardTab({
               gap: '6px'
             }}
           >
-            <RefreshCw size={14} style={{ animation: loadingLlm ? 'spin 1s linear infinite' : 'none' }} />
-            {loadingLlm ? 'Analyzing...' : 'Run LLM AI Matching'}
+            {loadingLlm ? (
+              <RefreshCw size={14} className="spin-icon" />
+            ) : (
+              <Play size={15} fill="#ffffff" />
+            )}
+            {loadingLlm ? 'Analyzing...' : 'Run Analysis'}
           </button>
         </div>
 
@@ -475,7 +479,7 @@ export default function DashboardTab({
       {(loading || loadingLlm) && (
         <div className="dashboard-card" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
           <RefreshCw size={24} className="spin-icon" style={{ marginBottom: 8, color: '#7c3aed' }} />
-          <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0f172a' }}>Executing LLM AI Relevance Analysis...</div>
+          <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0f172a' }}>Analyzing...</div>
         </div>
       )}
 
@@ -510,7 +514,7 @@ export default function DashboardTab({
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '780px' }}>
               <thead>
                 <tr style={{ background: '#ffffff', borderBottom: '2px solid #e2e8f0', color: '#64748b', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  <th style={{ padding: '10px 14px', width: '10%' }}>AI Score</th>
+                  <th style={{ padding: '10px 14px', width: '10%' }}>Score</th>
                   <th style={{ padding: '10px 14px', width: '28%' }}>Job Position & Domain</th>
                   <th style={{ padding: '10px 14px', width: '20%' }}>Company</th>
                   <th style={{ padding: '10px 14px', width: '18%' }}>Location / Type</th>
@@ -532,15 +536,32 @@ export default function DashboardTab({
                       <tr 
                         style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#ffffff' : '#fafafa', transition: 'background 0.15s' }}
                       >
-                        {/* 1. Match Score Column */}
+                        {/* 1. Match Score Column & Minimal Professional Recommendation Badge */}
                         <td style={{ padding: '10px 14px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '12px', fontWeight: '800', color: score >= 85 ? '#16a34a' : '#2563eb' }}>
-                              {score}%
-                            </span>
-                            <div style={{ width: '42px', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${score}%`, height: '100%', background: score >= 85 ? '#16a34a' : '#2563eb', borderRadius: '2px' }}></div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '12.5px', fontWeight: '800', color: score >= 85 ? '#16a34a' : (score >= 75 ? '#2563eb' : '#64748b') }}>
+                                {score}%
+                              </span>
+                              <div style={{ width: '38px', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                                <div style={{ width: `${score}%`, height: '100%', background: score >= 85 ? '#16a34a' : (score >= 75 ? '#2563eb' : '#94a3b8'), borderRadius: '2px' }}></div>
+                              </div>
                             </div>
+
+                            {/* Minimal Professional SaaS Recommendation Badges */}
+                            {job.recommendation === 'APPLY' ? (
+                              <span style={{ fontSize: '10px', fontWeight: '700', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '1px 6px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }}></span> Apply
+                              </span>
+                            ) : job.recommendation === 'DO_NOT_APPLY' ? (
+                              <span style={{ fontSize: '10px', fontWeight: '700', background: '#f8fafc', color: '#64748b', border: '1px solid #cbd5e1', padding: '1px 6px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#94a3b8' }}></span> Low Fit
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '10px', fontWeight: '700', background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', padding: '1px 6px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', width: 'fit-content' }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b' }}></span> Consider
+                              </span>
+                            )}
                           </div>
                         </td>
 
@@ -591,11 +612,11 @@ export default function DashboardTab({
                         <td style={{ padding: '10px 14px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                             <button
-                              onClick={() => setExpandedJobId(isExpanded ? null : job.id)}
-                              style={{ border: 'none', background: '#f1f5f9', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}
-                              title="Toggle LLM Reason"
+                              onClick={() => setSelectedJobForModal(job)}
+                              style={{ border: '1px solid #cbd5e1', background: '#ffffff', color: '#0f172a', borderRadius: '6px', padding: '5px 10px', fontSize: '11.5px', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+                              title="View Complete Explainable AI Analysis"
                             >
-                              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              <FileSearch size={13} style={{ color: '#2563eb' }} /> View Analysis
                             </button>
 
                             {job.status === 'Closed' ? (
@@ -609,7 +630,7 @@ export default function DashboardTab({
                             ) : (
                               <button
                                 onClick={(e) => handleApplyClick(e, job, applyUrl)}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '4px 10px', fontSize: '11.5px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', padding: '5px 12px', fontSize: '11.5px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer' }}
                               >
                                 Apply {applyUrl && applyUrl !== '#' && (applyUrl.startsWith('http://') || applyUrl.startsWith('https://')) && <ExternalLink size={10} />}
                               </button>
@@ -617,63 +638,6 @@ export default function DashboardTab({
                           </div>
                         </td>
                       </tr>
-
-                      {/* Expandable LLM Analysis Row */}
-                      {isExpanded && (
-                        <tr style={{ background: '#faf5ff', borderBottom: '1px solid #e2e8f0' }}>
-                          <td colSpan={6} style={{ padding: '12px 16px', fontSize: '12px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                              
-                              {/* 1. Score Breakdown Badges */}
-                              {job.scoreBreakdown && (
-                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#6d28d9' }}>Multi-Dimensional Score:</span>
-                                  <span style={{ fontSize: '10.5px', background: '#f3e8ff', color: '#6d28d9', padding: '2px 7px', borderRadius: '5px', fontWeight: '600', border: '1px solid #d8b4fe' }}>
-                                    Skills: {job.scoreBreakdown.skills || 85}%
-                                  </span>
-                                  <span style={{ fontSize: '10.5px', background: '#eff6ff', color: '#1d4ed8', padding: '2px 7px', borderRadius: '5px', fontWeight: '600', border: '1px solid #bfdbfe' }}>
-                                    Domain: {job.scoreBreakdown.domain || 90}%
-                                  </span>
-                                  <span style={{ fontSize: '10.5px', background: '#ecfdf5', color: '#047857', padding: '2px 7px', borderRadius: '5px', fontWeight: '600', border: '1px solid #a7f3d0' }}>
-                                    Experience: {job.scoreBreakdown.experience || 85}%
-                                  </span>
-                                  <span style={{ fontSize: '10.5px', background: '#fffbeb', color: '#b45309', padding: '2px 7px', borderRadius: '5px', fontWeight: '600', border: '1px solid #fde68a' }}>
-                                    Projects: {job.scoreBreakdown.projects || 80}%
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* 2. Reason */}
-                              <div>
-                                <div style={{ fontWeight: '700', color: '#6d28d9', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', marginBottom: '2px' }}>
-                                  <Sparkles size={12} /> AI Recommendation Reason:
-                                </div>
-                                <div style={{ color: '#334155', lineHeight: 1.4 }}>{reason}</div>
-                              </div>
-
-                              {/* 3. Gap Skills */}
-                              {missingSkills.length > 0 && (
-                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                  <span style={{ fontSize: '11px', fontWeight: '700', color: '#dc2626' }}>Gap Skills to Learn:</span>
-                                  {missingSkills.map((ms, idx) => (
-                                    <span key={idx} style={{ fontSize: '10px', background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '1px 6px', borderRadius: '4px', fontWeight: '600' }}>
-                                      {ms}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* 4. Actionable Tip */}
-                              {job.suggestedAction && (
-                                <div style={{ background: '#ffffff', border: '1px solid #e9d5ff', borderRadius: '7px', padding: '6px 10px', fontSize: '11.5px', color: '#581c87', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <Sparkles size={13} style={{ color: '#a855f7', flexShrink: 0 }} />
-                                  <span><strong>Pro Candidate Tip:</strong> {job.suggestedAction}</span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
                     </React.Fragment>
                   );
                 })}
@@ -761,6 +725,14 @@ export default function DashboardTab({
           </div>
         </div>
       )}
+
+      {/* Explainable AI Match Analysis Modal */}
+      <ExplainableMatchModal
+        isOpen={Boolean(selectedJobForModal)}
+        onClose={() => setSelectedJobForModal(null)}
+        job={selectedJobForModal}
+        candidateProfile={candidateProfile}
+      />
 
     </div>
   )

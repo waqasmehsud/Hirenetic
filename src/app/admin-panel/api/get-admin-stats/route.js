@@ -59,14 +59,39 @@ export async function GET() {
 
     const applications = appsData || []
 
-    // 4. Fetch Real Jobs from crwl_jobsData
+    // 4. Fetch Real Jobs from crwl_jobsData and job_applications DB tables
     const { data: jobsData } = await supabaseAdmin
       .from('crwl_jobsData')
       .select('*')
       .order('posted_at', { ascending: false })
       .range(0, 4999)
 
-    const formattedJobs = (jobsData || []).map(j => {
+    // Extract distinct applied jobs from job_applications table
+    const appliedJobsMap = new Map();
+    (appsData || []).forEach(app => {
+      const title = app.job_title || app.title;
+      const company = app.company_name || app.company || '10Pearls';
+      if (title) {
+        const key = `${title.toLowerCase()}-${company.toLowerCase()}`;
+        if (!appliedJobsMap.has(key)) {
+          appliedJobsMap.set(key, {
+            id: app.job_id || app.id || `app-job-${appliedJobsMap.size + 1}`,
+            title: title,
+            company: company,
+            location: 'Pakistan / Remote',
+            type: 'Full-Time',
+            salary: '$60,000 - $95,000 USD',
+            status: 'Active',
+            applicantsCount: 1
+          });
+        } else {
+          const existing = appliedJobsMap.get(key);
+          existing.applicantsCount += 1;
+        }
+      }
+    });
+
+    const formattedJobsFromCrwl = (jobsData || []).map(j => {
       const applicantCount = applications.filter(a => {
         const isIdMatch = String(a.job_id) === String(j.id)
         const isTitleMatch = (a.job_title || '').toLowerCase() === (j.title || '').toLowerCase()
@@ -86,6 +111,9 @@ export async function GET() {
         applicantsCount: applicantCount
       }
     })
+
+    const appliedJobsArray = Array.from(appliedJobsMap.values());
+    const formattedJobs = [...appliedJobsArray, ...formattedJobsFromCrwl];
 
     const formattedHR = (hrData || []).map(h => {
       const recruiterJobsCount = formattedJobs.filter(j => 
@@ -109,13 +137,21 @@ export async function GET() {
       .select('*')
       .order('id', { ascending: false })
 
+    const formattedScripts = (scriptsData || []).map(s => ({
+      id: s.id,
+      name: s.title || s.name || s.script_name || s.filename || `script_${s.id}.py`,
+      language: s.language || s.type || 'Python',
+      category: s.category || s.tag || s.type || 'Automation',
+      code: s.code || s.content || ''
+    }))
+
     return NextResponse.json({
       success: true,
       candidates: formattedCandidates,
       recruiters: formattedHR,
       jobs: formattedJobs,
       applications: applications,
-      scripts: scriptsData || []
+      scripts: formattedScripts
     })
   } catch (err) {
     console.error('API get-admin-stats exception:', err)

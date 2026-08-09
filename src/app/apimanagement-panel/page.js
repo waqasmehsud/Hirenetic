@@ -266,6 +266,48 @@ export default function ApiManagementPanelPage() {
           </div>
         </div>
 
+        {/* Exposed Candidate Widget API Info Card */}
+        <div style={{
+          backgroundColor: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e40af' }}>⚡ Exposed Candidate Widget API & Public Endpoint</span>
+              <span style={{ backgroundColor: '#2563eb', color: '#ffffff', fontSize: '10.5px', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>GET Endpoint</span>
+            </div>
+            <p style={{ fontSize: '12.5px', color: '#3b82f6', margin: 0 }}>
+              Exposes complete candidate widget payload (Match Score, Resume Score, Verifications, History, Work & Projects) for public embedding.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <a
+              href="/exposed-api?public_widget=true"
+              target="_blank"
+              rel="noreferrer"
+              style={{ padding: '6px 12px', background: '#2563eb', color: '#ffffff', borderRadius: '6px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}
+            >
+              Test Exposed API JSON
+            </a>
+            <a
+              href="/candidate-widget"
+              target="_blank"
+              rel="noreferrer"
+              style={{ padding: '6px 12px', background: '#ffffff', border: '1px solid #93c5fd', color: '#1d4ed8', borderRadius: '6px', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}
+            >
+              Open Candidate Widget View ↗
+            </a>
+          </div>
+        </div>
+
         {/* Dashboard Stat Cards */}
         <DashboardCards apis={apis} />
 

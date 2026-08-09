@@ -134,6 +134,17 @@ export default function HRPanelPage() {
     }
   };
 
+  // Master Refresh to fetch Candidates, Jobs, and Applications live from Supabase DB
+  const handleMasterRefreshDb = async () => {
+    addToast('info', 'Refreshing Database', 'Fetching latest candidates, applications, and jobs from Supabase...');
+    await Promise.all([
+      fetchRealDbCandidates(),
+      fetchDbJobs(true),
+      fetchJobApplications()
+    ]);
+    addToast('success', 'Database Updated', 'Live candidate profiles, applications, and job listings refreshed successfully!');
+  };
+
   // Fetch Real DB Jobs from public.crwl_jobsData via Server API Route (Bypasses Client RLS)
   const fetchDbJobs = async (isManualRefresh = false) => {
     setLoadingJobs(true);
@@ -175,7 +186,8 @@ export default function HRPanelPage() {
         const { data, error } = await supabase
           .from('crwl_jobsData')
           .select('*')
-          .order('posted_at', { ascending: false });
+          .order('id', { ascending: false })
+          .range(0, 4999);
 
         if (error) {
           console.error('Error fetching DB jobs:', error);
@@ -231,7 +243,7 @@ export default function HRPanelPage() {
           localStorage.removeItem('hr_user');
           setCurrentUser(null);
           setIsAuthChecking(false);
-          if (typeof window !== 'undefined') window.location.href = '/hr-panel/login';
+          router.replace('/hr-panel/login');
           return;
         }
 
@@ -248,7 +260,7 @@ export default function HRPanelPage() {
           localStorage.removeItem('hr_user');
           setCurrentUser(null);
           setIsAuthChecking(false);
-          if (typeof window !== 'undefined') window.location.href = '/hr-panel/login';
+          router.replace('/hr-panel/login');
           return;
         }
 
@@ -274,7 +286,7 @@ export default function HRPanelPage() {
         localStorage.removeItem('hr_user');
         setCurrentUser(null);
         setIsAuthChecking(false);
-        if (typeof window !== 'undefined') window.location.href = '/hr-panel/login';
+        router.replace('/hr-panel/login');
       }
     }
 
@@ -285,7 +297,7 @@ export default function HRPanelPage() {
   const fetchJobApplications = async () => {
     try {
       // 1. Try Server API Endpoint (uses service role key to join profiles)
-      const res = await fetch('/hr-panel/api/applications');
+      const res = await fetch(`/hr-panel/api/applications?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.applications)) {
@@ -370,11 +382,7 @@ export default function HRPanelPage() {
     } catch (e) {}
     localStorage.removeItem('hr_user');
     setCurrentUser(null);
-    if (typeof window !== 'undefined') {
-      window.location.href = '/hr-panel/login';
-    } else {
-      router.replace('/hr-panel/login');
-    }
+    router.replace('/hr-panel/login');
   };
 
   // Toast Helper
@@ -506,6 +514,33 @@ export default function HRPanelPage() {
     );
   }
 
+  const handleSelectCandidate = (candidateOrId) => {
+    if (!candidateOrId) return;
+
+    if (typeof candidateOrId === 'object' && candidateOrId !== null) {
+      setSelectedCandidateObject(candidateOrId);
+      setActiveCandidateId(candidateOrId.id || candidateOrId.candidateId || candidateOrId.email || 'cand-selected');
+    } else {
+      const idStr = String(candidateOrId);
+      const foundInReal = realCandidates.find(
+        (c) => String(c.id) === idStr || String(c.candidateId) === idStr || c.email === idStr
+      );
+      const foundInApplicants = applicants.find(
+        (a) => String(a.id) === idStr || String(a.candidateId) === idStr || a.email === idStr
+      );
+      const candidateObj = foundInReal || foundInApplicants || {
+        id: idStr,
+        full_name: 'Candidate Profile',
+        name: 'Candidate Profile',
+        email: 'candidate@hirenetic.com'
+      };
+      setSelectedCandidateObject(candidateObj);
+      setActiveCandidateId(idStr);
+    }
+
+    setIsCandidateModalOpen(true);
+  };
+
   if (!currentUser) {
     return null;
   }
@@ -532,7 +567,13 @@ export default function HRPanelPage() {
           activeView={activeView}
           setActiveView={setActiveView}
           onOpenPostJobModal={() => setIsPostJobModalOpen(true)}
-          onLogout={handleLogout}
+          onRefreshRealDb={handleMasterRefreshDb}
+          loadingRealDb={loadingRealCandidates || loadingJobs}
+          jobFilter={jobFilter}
+          setJobFilter={setJobFilter}
+          jobsCount={jobs.length}
+          openJobsCount={jobs.filter(j => j.status === 'Open' || j.status === 'Active').length}
+          closedJobsCount={jobs.filter(j => j.status === 'Closed').length}
         />
 
         <div className="view-container hr-view-container">
@@ -542,6 +583,7 @@ export default function HRPanelPage() {
               applicants={applicants} 
               onNavigate={setActiveView} 
               onOpenPostJob={() => setIsPostJobModalOpen(true)}
+              onSelectCandidate={handleSelectCandidate}
             />
           )}
 
@@ -549,12 +591,9 @@ export default function HRPanelPage() {
             <AllCandidatesView
               realCandidates={realCandidates}
               loading={loadingRealCandidates}
+              globalSearch={globalSearch}
               onRefresh={fetchRealDbCandidates}
-              onSelectCandidate={(candObj) => {
-                setSelectedCandidateObject(candObj);
-                setActiveCandidateId(candObj.id);
-                setIsCandidateModalOpen(true);
-              }}
+              onSelectCandidate={handleSelectCandidate}
             />
           )}
 
@@ -565,6 +604,7 @@ export default function HRPanelPage() {
               setJobFilter={setJobFilter} 
               applicants={applicants}
               loading={loadingJobs}
+              globalSearch={globalSearch}
               onRefreshJobs={() => fetchDbJobs(true)}
               onOpenPostJobModal={() => setIsPostJobModalOpen(true)}
               onToggleJobStatus={handleToggleJobStatus}
@@ -580,6 +620,7 @@ export default function HRPanelPage() {
             <ApplicantsView 
               applicants={applicants} 
               jobs={jobs}
+              globalSearch={globalSearch}
               applicantSearch={applicantSearch}
               setApplicantSearch={setApplicantSearch}
               applicantJobFilter={applicantJobFilter}
@@ -589,24 +630,15 @@ export default function HRPanelPage() {
               applicantScoreFilter={applicantScoreFilter}
               setApplicantScoreFilter={setApplicantScoreFilter}
               updateApplicantStatusInline={updateApplicantStatusInline}
-              onSelectCandidate={(id) => {
-                const found = realCandidates.find(c => c.id === id);
-                if (found) setSelectedCandidateObject(found);
-                setActiveCandidateId(id);
-                setIsCandidateModalOpen(true);
-              }}
+              onSelectCandidate={handleSelectCandidate}
             />
           )}
 
           {activeView === 'talent-pool' && (
             <TalentPoolView 
               applicants={applicants}
-              onSelectCandidate={(id) => {
-                const found = realCandidates.find(c => c.id === id);
-                if (found) setSelectedCandidateObject(found);
-                setActiveCandidateId(id);
-                setIsCandidateModalOpen(true);
-              }}
+              globalSearch={globalSearch}
+              onSelectCandidate={handleSelectCandidate}
               onRemoveFromTalentPool={async (candId) => {
                 try {
                   if (supabase && candId) {
@@ -638,11 +670,7 @@ export default function HRPanelPage() {
           {activeView === 'verification' && (
             <CandidateVerificationView
               realCandidates={realCandidates}
-              onSelectCandidate={(candObj) => {
-                setSelectedCandidateObject(candObj);
-                setActiveCandidateId(candObj.id);
-                setIsCandidateModalOpen(true);
-              }}
+              onSelectCandidate={handleSelectCandidate}
             />
           )}
 
@@ -682,22 +710,36 @@ export default function HRPanelPage() {
         />
       )}
 
-      {isCandidateModalOpen && (activeCandidateId || selectedCandidateObject) && (
+      {isCandidateModalOpen && (
         <CandidateDetailModal 
           isOpen={isCandidateModalOpen}
           onClose={() => {
             setIsCandidateModalOpen(false);
             setSelectedCandidateObject(null);
           }}
-          cand={selectedCandidateObject || applicants.find(a => a.id === activeCandidateId || a.candidateId === activeCandidateId)}
+          cand={selectedCandidateObject || realCandidates.find(c => String(c.id) === String(activeCandidateId) || String(c.candidateId) === String(activeCandidateId)) || applicants.find(a => String(a.id) === String(activeCandidateId) || String(a.candidateId) === String(activeCandidateId))}
           candidateId={activeCandidateId}
           applicants={applicants}
+          candidatesList={realCandidates.length > 0 ? realCandidates : applicants}
+          currentUser={currentUser}
           candidateNotesDraft={candidateNotesDraft}
           setCandidateNotesDraft={setCandidateNotesDraft}
           candidateStatusDraft={candidateStatusDraft}
           setCandidateStatusDraft={setCandidateStatusDraft}
-          onStatusUpdated={() => {
-            addToast('success', 'Status Updated', 'Candidate hiring status updated.');
+          onStatusUpdated={(actionName, updatedObj) => {
+            const targetId = updatedObj?.id || activeCandidateId;
+            setRealCandidates(prev => prev.map(c => 
+              (String(c.id) === String(targetId) || (updatedObj?.email && c.email === updatedObj.email)) 
+                ? { ...c, status: typeof actionName === 'string' ? actionName : (c.status || 'Verified'), stage: typeof actionName === 'string' ? actionName : c.stage } 
+                : c
+            ));
+            setApplicants(prev => prev.map(a => 
+              (String(a.id) === String(targetId) || (updatedObj?.email && a.email === updatedObj.email)) 
+                ? { ...a, status: typeof actionName === 'string' ? actionName : (a.status || 'Verified'), stage: typeof actionName === 'string' ? actionName : a.stage } 
+                : a
+            ));
+            addToast('success', 'Status Updated', `Candidate hiring status updated.`);
+            fetchRealDbCandidates();
           }}
         />
       )}

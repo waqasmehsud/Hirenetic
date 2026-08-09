@@ -26,7 +26,7 @@ export default function HRSignupPage() {
   React.useEffect(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('hr_user') : null
     if (stored) {
-      router.push('/hr-panel')
+      router.replace('/hr-panel')
     }
   }, [router])
 
@@ -84,7 +84,7 @@ export default function HRSignupPage() {
       setSuccessMsg('Employer account created and saved in employers_profiles database! Entering workspace...')
 
       setTimeout(() => {
-        router.push('/hr-panel')
+        router.replace('/hr-panel')
       }, 600)
     } catch (err) {
       console.error('HR Signup Error:', err)

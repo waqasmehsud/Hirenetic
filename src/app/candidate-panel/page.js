@@ -11,6 +11,7 @@ import DashboardTab from './components/DashboardTab'
 import UploadCVTab from './components/UploadCVTab'
 import ConnectAccountsTab from './components/ConnectAccountsTab'
 import InterestsTab from './components/InterestsTab'
+import VerificationTab from './components/VerificationTab'
 
 export default function CandidatePanelPage() {
   const router = useRouter()
@@ -30,13 +31,13 @@ export default function CandidatePanelPage() {
   useEffect(() => {
     async function verifyCandidateAuth() {
       if (!supabase) {
-        router.push('/candidate-panel/login')
+        router.replace('/candidate-panel/login')
         return
       }
 
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) {
-        router.push('/candidate-panel/login')
+        router.replace('/candidate-panel/login')
         return
       }
 
@@ -105,7 +106,7 @@ export default function CandidatePanelPage() {
         await supabase.auth.signOut()
       } catch (e) {}
     }
-    router.push('/candidate-panel/login')
+    router.replace('/candidate-panel/login')
   }
 
   const handleProfileUpdate = (updatedField) => {
@@ -178,6 +179,13 @@ export default function CandidatePanelPage() {
               handleProfileUpdate(field)
               setActiveTab('dashboard')
             }}
+          />
+        )}
+
+        {activeTab === 'verification' && (
+          <VerificationTab
+            candidateProfile={candidateProfile}
+            onRefreshProfile={handleProfileUpdate}
           />
         )}
 

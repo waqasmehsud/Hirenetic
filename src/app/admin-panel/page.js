@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import './admin-panel.css';
 import { 
   LayoutDashboard, 
   Users, 
   Briefcase, 
   UserCheck, 
-  Cpu, 
   Settings, 
   ShieldCheck, 
   CheckCircle, 
@@ -28,7 +28,6 @@ import UsersTab from './components/UsersTab';
 import CandidatesTab from './components/CandidatesTab';
 import JobsTab from './components/JobsTab';
 import HRManagementTab from './components/HRManagementTab';
-import ScriptsWorkflowTab from './components/ScriptsWorkflowTab';
 import SettingsTab from './components/SettingsTab';
 import { supabase } from './supabaseClient';
 
@@ -127,15 +126,44 @@ export default function AdminPanelPage() {
     fetchLiveRealData();
   }, []);
 
-  const stats = {
-    totalCandidates: candidates.length,
-    activeJobs: jobs.filter(j => j.status === 'Active').length,
-    hrAccounts: hrList.length,
-    totalApplications: applicationsList.length,
-    securityScans: jobs.length + candidates.length + scriptsList.length
+  const handleLockAdmin = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('admin_panel_unlocked');
+      localStorage.removeItem('admin_panel_unlocked');
+    }
+    setIsAdminUnlocked(false);
+    triggerToast('Admin Panel Security Locked.');
+  };
+
+  const handleExportSystemData = () => {
+    const exportPayload = {
+      timestamp: new Date().toISOString(),
+      platform: 'Hirenetic Enterprise Admin Console',
+      stats,
+      candidates,
+      jobs,
+      recruiters: hrList,
+      scripts: scriptsList,
+      applications: applicationsList
+    };
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hirenetic-admin-report-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    triggerToast('System Data Audit Report Exported!');
   };
 
   const activeAdminUser = 'Admin';
+
+  const router = useRouter();
+
+  const handlePanelReplace = (path) => (e) => {
+    e.preventDefault();
+    router.replace(path);
+  };
 
   if (!isAdminUnlocked) {
     return (
@@ -239,10 +267,6 @@ export default function AdminPanelPage() {
             <UserCheck size={16} /><span>Recruiters ({hrList.length})</span>
           </div>
 
-          <div className={`admin-nav-item ${activeTab === 'scripts' ? 'active' : ''}`} onClick={() => setActiveTab('scripts')}>
-            <Cpu size={16} /><span>Scripts ({scriptsList.length})</span>
-          </div>
-
           <div className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
             <Settings size={16} /><span>Settings</span>
           </div>
@@ -252,9 +276,15 @@ export default function AdminPanelPage() {
             System Portals
           </div>
 
-          <a href="/apimanagement-panel" className="admin-nav-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <a href="/apimanagement-panel" onClick={handlePanelReplace('/apimanagement-panel')} className="admin-nav-item" style={{ textDecoration: 'none', color: 'inherit' }}>
             <Key size={16} style={{ color: '#eab308' }} />
             <span>API Management</span>
+            <ExternalLink size={11} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+          </a>
+
+          <a href="/scripts-inventory" onClick={handlePanelReplace('/scripts-inventory')} className="admin-nav-item" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Code size={16} style={{ color: '#2563eb' }} />
+            <span>Script Editor</span>
             <ExternalLink size={11} style={{ marginLeft: 'auto', opacity: 0.5 }} />
           </a>
         </nav>
@@ -280,15 +310,23 @@ export default function AdminPanelPage() {
               {activeTab === 'candidates' && 'Candidate Profiles'}
               {activeTab === 'jobs' && `Live Jobs (${jobs.length})`}
               {activeTab === 'hr' && 'Recruiter Accounts'}
-              {activeTab === 'scripts' && 'Scripts & Workflows'}
               {activeTab === 'settings' && 'System Configuration'}
             </h1>
             <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>Hirenetic Real Database Console</p>
           </div>
 
           <div className="admin-header-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <button 
+              className="admin-btn admin-btn-secondary" 
+              style={{ padding: '4px 10px', fontSize: '11.5px', fontWeight: '600' }} 
+              onClick={handleExportSystemData}
+            >
+              <Sparkles size={13} style={{ color: '#8b5cf6' }} /> Export Report
+            </button>
+
             <a 
               href="/apimanagement-panel" 
+              onClick={handlePanelReplace('/apimanagement-panel')}
               className="admin-btn admin-btn-secondary" 
               style={{ padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: '600' }}
             >
@@ -297,14 +335,32 @@ export default function AdminPanelPage() {
 
             <a 
               href="/scripts-inventory" 
+              onClick={handlePanelReplace('/scripts-inventory')}
               className="admin-btn admin-btn-secondary" 
               style={{ padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11.5px', fontWeight: '600' }}
             >
               <Code size={13} style={{ color: '#2563eb' }} /> Script Editor
             </a>
 
-            <button className="admin-btn admin-btn-secondary" style={{ padding: '4px 10px', fontSize: '11.5px' }} onClick={fetchLiveRealData} disabled={isLoadingRealData}>
+            <button 
+              className="admin-btn admin-btn-secondary" 
+              style={{ padding: '4px 10px', fontSize: '11.5px' }} 
+              onClick={() => {
+                fetchLiveRealData();
+                triggerToast('Live database stats refreshed!');
+              }} 
+              disabled={isLoadingRealData}
+            >
               <RefreshCw className={isLoadingRealData ? 'spin' : ''} size={13} /> Refresh
+            </button>
+
+            <button 
+              className="admin-btn admin-btn-secondary" 
+              style={{ padding: '4px 10px', fontSize: '11.5px', color: '#ef4444', borderColor: '#fca5a5' }} 
+              onClick={handleLockAdmin}
+              title="Lock Admin Panel Security Passcode"
+            >
+              <Lock size={13} /> Lock
             </button>
 
             <span className="badge badge-success" style={{ padding: '3px 8px', fontSize: '11px' }}>
@@ -332,10 +388,6 @@ export default function AdminPanelPage() {
 
           {activeTab === 'hr' && (
             <HRManagementTab hrList={hrList} setHrList={setHrList} onNotify={triggerToast} />
-          )}
-
-          {activeTab === 'scripts' && (
-            <ScriptsWorkflowTab onNotify={triggerToast} scriptsList={scriptsList} />
           )}
 
           {activeTab === 'settings' && (

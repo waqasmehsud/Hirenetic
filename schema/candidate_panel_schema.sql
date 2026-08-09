@@ -55,6 +55,50 @@ ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS llm_parsed_json 
 ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS active_llm_provider TEXT;
 ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS cv_file_path TEXT;
 ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS hr_notes TEXT;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS hr_notes_author TEXT;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS hr_notes_updated_at TIMESTAMPTZ;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS github_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS github_score INT DEFAULT 92;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS linkedin_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS linkedin_score INT DEFAULT 95;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS portfolio_verified BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS portfolio_score INT DEFAULT 90;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS resume_score INT DEFAULT 92;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS trust_score INT DEFAULT 96;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS match_score INT DEFAULT 94;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS rating NUMERIC(3, 1) DEFAULT 4.7;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS experience_years NUMERIC(4, 1) DEFAULT 4.2;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS verifications JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS target_role TEXT;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS company_name TEXT;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS applied_at TIMESTAMPTZ;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS stage TEXT DEFAULT 'Screening';
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'In Progress';
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS applications JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS expected_salary TEXT;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS notice_period TEXT;
+ALTER TABLE public.candidates_profiles ADD COLUMN IF NOT EXISTS github_first_push_year INT;
+
+-- 3. Job Applications Standalone Table
+CREATE TABLE IF NOT EXISTS public.job_applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID REFERENCES public.candidates_profiles(id) ON DELETE CASCADE,
+    email TEXT,
+    job_id TEXT,
+    job_title TEXT NOT NULL,
+    company_name TEXT NOT NULL,
+    applied_at TIMESTAMPTZ DEFAULT NOW(),
+    stage TEXT DEFAULT 'Screening',
+    status TEXT DEFAULT 'In Progress',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.job_applications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public access to job_applications" ON public.job_applications;
+CREATE POLICY "Allow public access to job_applications" ON public.job_applications FOR ALL USING (true);
 
 -- 3. Enable Row Level Security (RLS) & Add Public Access Policies
 ALTER TABLE public.candidates_profiles ENABLE ROW LEVEL SECURITY;

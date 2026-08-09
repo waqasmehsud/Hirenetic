@@ -9,27 +9,30 @@ export default function JobsView({
   setJobFilter,
   applicants = [],
   loading = false,
+  globalSearch = '',
   onRefreshJobs,
   onOpenPostJobModal,
   onToggleJobStatus,
   onViewApplicantsForJob
 }) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [localSearch, setLocalSearch] = useState('');
   const safeJobs = Array.isArray(jobs) ? jobs : [];
   const safeApplicants = Array.isArray(applicants) ? applicants : [];
 
+  const activeSearch = globalSearch || localSearch;
+
   const filteredJobs = safeJobs.filter(job => {
     // Filter by open / closed status
-    if (jobFilter === 'open' && job.status !== 'Open') return false;
+    if (jobFilter === 'open' && (job.status !== 'Open' && job.status !== 'Active')) return false;
     if (jobFilter === 'closed' && job.status !== 'Closed') return false;
 
     // Filter by search term
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase().trim();
-      const title = (job.title || '').toLowerCase();
-      const dept = (job.dept || '').toLowerCase();
+    if (activeSearch.trim()) {
+      const q = activeSearch.toLowerCase().trim();
+      const title = (job.title || job.job_title || '').toLowerCase();
+      const dept = (job.dept || job.department || '').toLowerCase();
       const location = (job.location || '').toLowerCase();
-      const skills = Array.isArray(job.skills) ? job.skills.join(' ').toLowerCase() : '';
+      const skills = Array.isArray(job.skills) ? job.skills.join(' ').toLowerCase() : (typeof job.skills === 'string' ? job.skills.toLowerCase() : '');
 
       return title.includes(q) || dept.includes(q) || location.includes(q) || skills.includes(q);
     }
@@ -39,85 +42,6 @@ export default function JobsView({
 
   return (
     <section className="view-section active">
-      {/* View Header Bar */}
-      <div className="view-header-bar flex-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Briefcase style={{ color: '#2563eb' }} size={22} />
-            Job Postings & Career Listings
-          </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
-            Real-time job openings fetched live from Supabase public.crwl_jobsData database table.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            onClick={onRefreshJobs}
-            disabled={loading}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              color: '#334155',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <RefreshCw size={15} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-            {loading ? 'Fetching DB...' : 'Refresh DB Jobs'}
-          </button>
-
-          <button className="btn btn-primary" onClick={onOpenPostJobModal}>
-            <Plus size={16} /> Create New Job Posting
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Tabs & Search Control */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <div className="filter-group" style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className={`tab-btn ${jobFilter === 'all' ? 'active' : ''}`}
-            onClick={() => setJobFilter && setJobFilter('all')}
-            style={{ padding: '7px 14px', borderRadius: '8px', fontSize: '13px', border: '1px solid #cbd5e1', cursor: 'pointer', background: jobFilter === 'all' ? '#2563eb' : '#ffffff', color: jobFilter === 'all' ? '#ffffff' : '#334155', fontWeight: '600' }}
-          >
-            All Jobs ({safeJobs.length})
-          </button>
-
-          <button
-            className={`tab-btn ${jobFilter === 'open' ? 'active' : ''}`}
-            onClick={() => setJobFilter && setJobFilter('open')}
-            style={{ padding: '7px 14px', borderRadius: '8px', fontSize: '13px', border: '1px solid #cbd5e1', cursor: 'pointer', background: jobFilter === 'open' ? '#2563eb' : '#ffffff', color: jobFilter === 'open' ? '#ffffff' : '#334155', fontWeight: '600' }}
-          >
-            Open Positions
-          </button>
-
-          <button
-            className={`tab-btn ${jobFilter === 'closed' ? 'active' : ''}`}
-            onClick={() => setJobFilter && setJobFilter('closed')}
-            style={{ padding: '7px 14px', borderRadius: '8px', fontSize: '13px', border: '1px solid #cbd5e1', cursor: 'pointer', background: jobFilter === 'closed' ? '#2563eb' : '#ffffff', color: jobFilter === 'closed' ? '#ffffff' : '#334155', fontWeight: '600' }}
-          >
-            Closed Positions
-          </button>
-        </div>
-
-        <div style={{ position: 'relative', width: '280px' }}>
-          <Search size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input
-            type="text"
-            placeholder="Search job title, skills..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff' }}
-          />
-        </div>
-      </div>
 
       {/* Jobs Grid */}
       {loading ? (

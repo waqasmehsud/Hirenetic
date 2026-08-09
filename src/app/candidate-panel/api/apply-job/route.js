@@ -14,7 +14,8 @@ export async function POST(req) {
       job_title,
       external_apply_url,
       application_source,
-      application_status
+      application_status,
+      match_score
     } = body
 
     if (!candidate_id) {
@@ -36,6 +37,16 @@ export async function POST(req) {
       application_source: application_source || 'Candidate Portal External Redirect',
       application_status: application_status || 'Redirected',
       applied_at: new Date().toISOString()
+    }
+
+    // Save/update overall_match score in candidates_profiles table
+    if (candidate_id && match_score) {
+      try {
+        await supabase
+          .from('candidates_profiles')
+          .update({ overall_match: Number(match_score) })
+          .eq('id', String(candidate_id))
+      } catch (e) {}
     }
 
     const { data, error } = await supabase

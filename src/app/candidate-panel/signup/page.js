@@ -96,7 +96,7 @@ export default function CandidateSignupPage() {
               password: password.trim()
             }).catch(() => {})
           }
-          router.push('/candidate-panel')
+          router.replace('/candidate-panel')
           return
         } else if (data && data.error) {
           const formattedErr = extractErrorMessage(data.error, 'Failed to create candidate account. Please try again.')
@@ -128,7 +128,7 @@ export default function CandidateSignupPage() {
         }
 
         if (data?.session) {
-          router.push('/candidate-panel')
+          router.replace('/candidate-panel')
         } else {
           await supabase.auth.signOut().catch(() => {})
           setSubmittedEmail(email.trim())

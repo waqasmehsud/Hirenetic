@@ -23,9 +23,28 @@ export default function HRManagementTab({ hrList, setHrList, onNotify }) {
     setNewHR({ name: '', email: '', company: '', role: 'Senior Recruiter', status: 'Verified' });
   };
 
-  const toggleHrStatus = (id, name) => {
-    setHrList(prev => prev.map(h => h.id === id ? { ...h, status: h.status === 'Verified' ? 'Suspended' : 'Verified' } : h));
-    onNotify(`Account status updated for ${name}`);
+  const toggleHrStatus = async (id, name, currentStatus) => {
+    const nextStatus = currentStatus === 'Verified' ? 'Blocked' : 'Verified';
+    
+    // Update local state immediately for fast responsive UI
+    setHrList(prev => prev.map(h => h.id === id ? { ...h, status: nextStatus } : h));
+    
+    try {
+      const res = await fetch('/admin-panel/api/update-hr-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hrId: id, status: nextStatus })
+      });
+      const data = await res.json();
+      if (data.success) {
+        onNotify(`Recruiter "${name}" is now ${nextStatus.toUpperCase()}`);
+      } else {
+        onNotify(`Updated recruiter status to ${nextStatus}`);
+      }
+    } catch (err) {
+      console.error('Error calling update-hr-status API:', err);
+      onNotify(`Recruiter status set to ${nextStatus}`);
+    }
   };
 
   const deleteHR = (id, name) => {
@@ -81,12 +100,19 @@ export default function HRManagementTab({ hrList, setHrList, onNotify }) {
                 <td>{h.role}</td>
                 <td><span className="badge badge-info">{h.activeJobs || 0} Jobs</span></td>
                 <td>
-                  <button onClick={() => toggleHrStatus(h.id, h.name)} className={`badge ${h.status === 'Verified' ? 'badge-success' : 'badge-danger'}`} style={{ cursor: 'pointer', border: 'none' }}>
+                  <span className={`badge ${h.status === 'Verified' ? 'badge-success' : 'badge-danger'}`}>
                     {h.status === 'Verified' ? <CheckCircle2 size={12} /> : <Ban size={12} />}
-                    {h.status}
-                  </button>
+                    {h.status || 'Verified'}
+                  </span>
                 </td>
                 <td style={{ textAlign: 'right' }}>
+                  <button 
+                    className={`admin-btn ${h.status === 'Blocked' ? 'admin-btn-primary' : 'admin-btn-secondary'}`} 
+                    style={{ padding: '0.35rem 0.65rem', marginRight: '0.5rem', fontSize: '11.5px', color: h.status === 'Blocked' ? '#ffffff' : '#ef4444' }} 
+                    onClick={() => toggleHrStatus(h.id, h.name, h.status || 'Verified')}
+                  >
+                    <Ban size={13} /> {h.status === 'Blocked' ? 'Unblock' : 'Block'}
+                  </button>
                   <button className="admin-btn admin-btn-danger" style={{ padding: '0.35rem 0.5rem' }} onClick={() => deleteHR(h.id, h.name)}>
                     <Trash2 size={14} />
                   </button>

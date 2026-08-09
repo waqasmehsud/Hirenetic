@@ -1,15 +1,15 @@
 /* Candidate Panel Light / White Design System */
 
 :root {
-  --bg-page: #f8fafc;
-  --bg-card: #ffffff;
-  --bg-input: #f8fafc;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --accent-primary: #2563eb;
-  --accent-hover: #1d4ed8;
-  --border-color: #e2e8f0;
-  --border-focus: #2563eb;
+  --bg-page: var(--brand-bg);
+  --bg-card: var(--brand-surface);
+  --bg-input: var(--brand-surface-muted);
+  --text-main: var(--brand-text-main);
+  --text-muted: var(--brand-text-muted);
+  --accent-primary: var(--brand-primary);
+  --accent-hover: var(--brand-primary-hover);
+  --border-color: var(--brand-border);
+  --border-focus: var(--brand-primary);
 }
 
 * {

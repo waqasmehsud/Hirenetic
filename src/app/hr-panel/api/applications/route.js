@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET: Fetch all job applications joined with candidate profile data
 export async function GET() {
   try {
@@ -32,7 +35,10 @@ export async function GET() {
     const candidateIds = Array.from(new Set(apps.map(a => a.candidate_id).filter(Boolean)))
 
     let profilesMap = {}
+    let matchesMap = {}
+
     if (candidateIds.length > 0) {
+      // Fetch candidate profiles
       const { data: profiles } = await supabase
         .from('candidates_profiles')
         .select('*')
@@ -43,11 +49,36 @@ export async function GET() {
           profilesMap[p.id] = p
         })
       }
+
+      // Fetch stored LLM match scores from candidate_job_matches
+      try {
+        const { data: matches } = await supabase
+          .from('candidate_job_matches')
+          .select('*')
+          .in('candidate_id', candidateIds)
+
+        if (Array.isArray(matches)) {
+          matches.forEach(m => {
+            if (m.candidate_id && m.job_id) {
+              matchesMap[`${m.candidate_id}_${m.job_id}`] = m
+            }
+            if (m.candidate_id && !matchesMap[m.candidate_id]) {
+              matchesMap[m.candidate_id] = m
+            }
+          })
+        }
+      } catch (e) {
+        // Fallback gracefully if table missing
+      }
     }
 
-    // Merge applications with candidate profile
+    // Merge applications with candidate profile & candidate_job_matches
     const mergedApplications = apps.map(app => {
       const p = profilesMap[app.candidate_id] || {}
+      const matchObj = matchesMap[`${app.candidate_id}_${app.job_id}`] || matchesMap[app.candidate_id] || {}
+      
+      const exactScore = matchObj.match_score || app.match_score || p.overall_match || p.skills_score || 85
+
       return {
         application_id: app.id,
         id: p.id || app.candidate_id,
@@ -68,9 +99,14 @@ export async function GET() {
         appliedDate: app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'Recent',
         applied_at: app.applied_at,
         created_at: app.created_at,
-        matchScore: p.overall_match || p.skills_score || 85,
+        matchScore: exactScore,
         skills: Array.isArray(p.skills) ? p.skills : [],
-        missingSkills: Array.isArray(p.missing_skills) ? p.missing_skills : [],
+        matchedSkills: Array.isArray(matchObj.matched_skills) ? matchObj.matched_skills : (Array.isArray(p.skills) ? p.skills : []),
+        missingSkills: Array.isArray(matchObj.missing_skills) ? matchObj.missing_skills : (Array.isArray(p.missing_skills) ? p.missing_skills : []),
+        whyRecommended: matchObj.why_recommended || [],
+        whyNotRecommended: matchObj.why_not_recommended || [],
+        executiveSummary: matchObj.executive_summary || matchObj.reasoning || null,
+        projectSpotlight: matchObj.project_spotlight || null,
         cv_file_path: p.cv_file_path,
         resume_text: p.resume_text,
         github_url: p.github_url,

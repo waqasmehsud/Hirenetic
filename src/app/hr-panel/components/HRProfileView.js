@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Building2, User, Mail, Phone, Globe, MapPin, Briefcase, Users, Save, CheckCircle2 } from 'lucide-react';
+import { Building2, User, Mail, Phone, Globe, MapPin, Briefcase, Users, Save, CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
 import { supabase } from '../supabase';
 
 export default function HRProfileView({ currentUser, onProfileUpdated, addToast }) {
@@ -19,6 +19,7 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
 
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [newPasscode, setNewPasscode] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -80,8 +81,6 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
 
   const avatarInitials = (formData.name || 'HR').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
-  const [newPasscode, setNewPasscode] = useState('');
-
   const handleUpdatePasscode = () => {
     if (!newPasscode.trim()) {
       alert('Please enter a valid passcode.');
@@ -94,24 +93,41 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
   };
 
   return (
-    <section className="view-section active">
-      <div className="view-header-bar flex-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0 }}>HR Company Profile & Security</h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>Manage your recruiter identity, enterprise details, and admin security passcode.</p>
-        </div>
-      </div>
-
-      <div style={{ maxWidth: '800px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '28px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <section className="view-section active" style={{ maxWidth: '850px', margin: '0 auto' }}>
+      
+      {/* Profile Settings Card */}
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '28px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', marginBottom: '24px' }}>
         
-        {/* Banner Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', paddingBottom: '24px', marginBottom: '24px', borderBottom: '1px solid #f1f5f9' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '16px', background: '#2563eb', color: '#ffffff', fontSize: '22px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', shrink: 0 }}>
-            {avatarInitials}
+        {/* Profile Header Avatar Banner */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '24px', marginBottom: '24px', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ 
+              width: '60px', 
+              height: '60px', 
+              borderRadius: '14px', 
+              background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', 
+              color: '#ffffff', 
+              fontSize: '22px', 
+              fontWeight: '800', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              {avatarInitials}
+            </div>
+            <div>
+              <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.3px' }}>
+                {formData.company || 'Hirenetic Enterprise'}
+              </h3>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: '3px 0 0 0', fontWeight: '500' }}>
+                {formData.name || 'HR Admin'} • {formData.designation || 'Recruiter'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', margin: 0 }}>{formData.company || 'Company Name'}</h3>
-            <p style={{ fontSize: '13px', color: '#64748b', margin: '2px 0 0 0' }}>{formData.name} • {formData.designation}</p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#047857', padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>
+            <ShieldCheck size={14} /> Active Recruiter Profile
           </div>
         </div>
 
@@ -122,64 +138,78 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          
+          {/* Row 1: Full Name & Read-only Email */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Full Name</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <User size={13} style={{ color: '#2563eb' }} /> Full Name
+              </label>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 required
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '500' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Account Email (Read-Only)</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Mail size={13} style={{ color: '#64748b' }} /> Account Email (Read-Only)
+              </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 disabled
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none', background: '#f1f5f9', color: '#64748b' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', outline: 'none', background: '#f8fafc', color: '#64748b', fontWeight: '500' }}
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          {/* Row 2: Company & Designation */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Company / Organization Name</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Building2 size={13} style={{ color: '#2563eb' }} /> Company / Organization Name
+              </label>
               <input
                 type="text"
                 name="company"
                 value={formData.company}
                 onChange={handleChange}
                 required
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '500' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>HR Designation / Title</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Briefcase size={13} style={{ color: '#2563eb' }} /> HR Designation / Title
+              </label>
               <input
                 type="text"
                 name="designation"
                 value={formData.designation}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '500' }}
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          {/* Row 3: Industry & Company Size */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Industry Sector</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Briefcase size={13} style={{ color: '#2563eb' }} /> Industry Sector
+              </label>
               <select
                 name="industry"
                 value={formData.industry}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '600', cursor: 'pointer' }}
               >
                 <option value="Cybersecurity">Cybersecurity & SOC</option>
                 <option value="Software Development">Software Development</option>
@@ -190,12 +220,14 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Company Size</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Users size={13} style={{ color: '#2563eb' }} /> Company Size
+              </label>
               <select
                 name="company_size"
                 value={formData.company_size}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '600', cursor: 'pointer' }}
               >
                 <option value="1-10">1-10 employees</option>
                 <option value="11-50">11-50 employees</option>
@@ -206,81 +238,109 @@ export default function HRProfileView({ currentUser, onProfileUpdated, addToast 
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          {/* Row 4: Phone & Location */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Phone Number</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Phone size={13} style={{ color: '#2563eb' }} /> Phone Number
+              </label>
               <input
                 type="text"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+92 300 1234567"
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '500' }}
               />
             </div>
+
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Location / City</label>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={13} style={{ color: '#2563eb' }} /> Location / City
+              </label>
               <input
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                placeholder="Islamabad, Pakistan"
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '500' }}
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#334155', marginBottom: '6px' }}>Website URL</label>
+          </div>
+
+          {/* Row 5: Website URL */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+            <div style={{ gridColumn: 'span 2' }}>
+              <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Globe size={13} style={{ color: '#2563eb' }} /> Website URL
+              </label>
               <input
                 type="text"
                 name="website_url"
                 value={formData.website_url}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none', background: '#f8fafc' }}
+                placeholder="https://hirenetic.com"
+                style={{ width: '100%', padding: '9.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '500' }}
               />
             </div>
           </div>
 
-          <div style={{ paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'flex-end' }}>
             <button
               type="submit"
               disabled={saving}
-              style={{ padding: '11px 24px', borderRadius: '10px', background: '#2563eb', color: '#ffffff', fontSize: '14px', fontWeight: '600', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: saving ? 0.7 : 1 }}
+              style={{
+                padding: '9.5px 22px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: '700',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                opacity: saving ? 0.7 : 1,
+                boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)'
+              }}
             >
-              <Save size={16} />
+              <Save size={15} />
               {saving ? 'Saving Changes...' : 'Save Profile Changes'}
             </button>
           </div>
 
         </form>
-
-        {/* Admin Security Passcode Section */}
-        <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px dashed #cbd5e1' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Building2 size={16} style={{ color: '#2563eb' }} /> Admin Security Passcode
-          </h4>
-          <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 14px' }}>
-            Set or update the passcode required to access the HR Panel lock screen.
-          </p>
-
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input
-              type="password"
-              placeholder="Enter new admin passcode..."
-              value={newPasscode}
-              onChange={(e) => setNewPasscode(e.target.value)}
-              style={{ width: '260px', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#f8fafc' }}
-            />
-            <button
-              type="button"
-              onClick={handleUpdatePasscode}
-              style={{ padding: '9px 16px', borderRadius: '8px', background: '#0f172a', color: '#ffffff', fontSize: '12.5px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
-            >
-              Update Passcode
-            </button>
-          </div>
-        </div>
-
       </div>
+
+      {/* Admin Security Passcode Card */}
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Lock size={16} style={{ color: '#2563eb' }} /> Admin Security Passcode
+        </h4>
+        <p style={{ fontSize: '12.5px', color: '#64748b', margin: '0 0 16px', fontWeight: '500' }}>
+          Set or update the passcode required to access the HR Panel lock screen.
+        </p>
+
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <input
+            type="password"
+            placeholder="Enter new admin passcode..."
+            value={newPasscode}
+            onChange={(e) => setNewPasscode(e.target.value)}
+            style={{ width: '280px', padding: '8.5px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: '#f8fafc', color: '#0f172a' }}
+          />
+          <button
+            type="button"
+            onClick={handleUpdatePasscode}
+            style={{ padding: '8.5px 18px', borderRadius: '8px', background: '#0f172a', color: '#ffffff', fontSize: '12.5px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 1px 3px rgba(15, 23, 42, 0.2)' }}
+          >
+            Update Passcode
+          </button>
+        </div>
+      </div>
+
     </section>
   );
 }

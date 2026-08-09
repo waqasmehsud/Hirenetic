@@ -91,8 +91,8 @@ export default function OverviewTab({ stats, setActiveTab, onTriggerAction }) {
             <button className="admin-btn admin-btn-secondary" style={{ justifyContent: 'center' }} onClick={() => setActiveTab('jobs')}>
               <Briefcase size={16} /> Manage Jobs
             </button>
-            <button className="admin-btn admin-btn-secondary" style={{ justifyContent: 'center' }} onClick={() => setActiveTab('scripts')}>
-              <Activity size={16} /> Run Scripts
+            <button className="admin-btn admin-btn-secondary" style={{ justifyContent: 'center' }} onClick={() => setActiveTab('hr')}>
+              <UserCheck size={16} /> Manage Recruiters
             </button>
             <button className="admin-btn admin-btn-primary" style={{ justifyContent: 'center' }} onClick={() => onTriggerAction('System Audit Completed Successfully!')}>
               <FileCheck2 size={16} /> Run Audit Scan

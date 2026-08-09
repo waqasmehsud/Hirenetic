@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
-import { Sparkles, LayoutDashboard, Link2, Target, LogOut, Code2, Eye, FileText, X, Menu } from 'lucide-react'
+import { BRAND_CONFIG } from '@/theme/branding.config'
+import { Sparkles, LayoutDashboard, Link2, Target, LogOut, Code2, Eye, FileText, X, Menu, ShieldCheck } from 'lucide-react'
 
 export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, candidateProfile, onLogout, onOpenWizard }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -89,10 +90,10 @@ export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, ca
             <Code2 size={20} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>
-              Hirenetic
+            <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--brand-text-main)', letterSpacing: '-0.02em' }}>
+              {BRAND_CONFIG.companyName}
             </span>
-            <span style={{ fontSize: '10px', fontWeight: '700', color: '#2563eb', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '10px' }}>
+            <span style={{ fontSize: '10px', fontWeight: '700', color: 'var(--brand-primary)', backgroundColor: 'var(--brand-primary-light)', border: '1px solid var(--brand-primary-border)', padding: '1px 6px', borderRadius: '10px' }}>
               AI Portal
             </span>
           </div>
@@ -119,6 +120,27 @@ export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, ca
           >
             <LayoutDashboard size={16} />
             <span>Matched Jobs</span>
+          </button>
+
+          <button
+            onClick={() => handleNavClick('verification')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '7px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '13.5px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              backgroundColor: activeTab === 'verification' ? '#eff6ff' : 'transparent',
+              color: activeTab === 'verification' ? '#2563eb' : '#475569',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <ShieldCheck size={16} />
+            <span>Verification</span>
           </button>
 
           <button
@@ -346,6 +368,26 @@ export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, ca
           >
             <LayoutDashboard size={18} />
             <span>Matched Jobs Feed</span>
+          </button>
+
+          <button
+            onClick={() => handleNavClick('verification')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '10px 14px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '14px',
+              fontWeight: '600',
+              backgroundColor: activeTab === 'verification' ? '#eff6ff' : 'transparent',
+              color: activeTab === 'verification' ? '#2563eb' : '#334155',
+              textAlign: 'left'
+            }}
+          >
+            <ShieldCheck size={18} />
+            <span>Verification</span>
           </button>
 
           <button

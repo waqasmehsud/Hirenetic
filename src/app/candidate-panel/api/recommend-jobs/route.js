@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { scrapeJobWebpage } from '@/lib/jobScraper';
 
 export async function POST(req) {
   try {
@@ -7,7 +8,7 @@ export async function POST(req) {
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     const body = await req.json().catch(() => ({}));
-    const { userId, candidateProfile: inputProfile } = body;
+    const { userId, candidateProfile: inputProfile, limit = 15 } = body;
 
     // 1. Fetch Candidate Profile from DB if userId provided, otherwise use inputProfile
     let candidateProfile = inputProfile || null;
@@ -28,18 +29,18 @@ export async function POST(req) {
     if (!candidateProfile) {
       candidateProfile = {
         full_name: 'Candidate User',
-        title: 'Cybersecurity & Software Specialist',
-        skills: ['Python', 'Wireshark', 'SIEM', 'React', 'Git', 'Linux'],
-        experience: '2+ Years',
+        title: 'Software & Technical Specialist',
+        skills: ['Python', 'React', 'PostgreSQL', 'Git', 'Linux', 'REST API', 'FastAPI'],
+        experience: '3+ Years',
         education: 'B.S. Computer Science',
-        projects: [{ title: 'SOC Automation', techStack: 'Python, Wireshark' }],
-        certifications: ['CompTIA Security+', 'HTB Certified'],
-        resume_field: 'Cyber Security',
-        location: 'Islamabad, Pakistan / Remote'
+        projects: [{ title: 'Backend REST API Suite', description: 'Built automated REST APIs and DB pipeline.', techStack: 'Python, FastAPI, PostgreSQL' }],
+        certifications: ['AWS Certified Cloud Practitioner'],
+        resume_field: 'Software Engineering',
+        location: 'Remote / Hybrid'
       };
     }
 
-    // 2. Fetch Active Jobs from public.crwl_jobsData
+    // 2. Fetch Active Jobs from crwl_jobsData
     let activeJobs = [];
     try {
       const { data, error: jobsErr } = await supabaseAdmin
@@ -57,297 +58,417 @@ export async function POST(req) {
       return Response.json({ error: 'No active job postings found' }, { status: 404 });
     }
 
-    // 3. Prepare Multi-Dimensional Context for AI Model
-    let candidateKeys = [];
-    try {
-      const { data: dbKeys } = await supabaseAdmin
-        .from('api_credentials')
-        .select('*')
-        .eq('status', 'Active');
-      if (Array.isArray(dbKeys)) {
-        candidateKeys = dbKeys.filter(k => k && k.api_key && String(k.api_key).trim().length > 5);
-      }
-    } catch (e) {}
-
-    const envGroq = process.env.GROQ_API_KEY;
-    const envOpenAI = process.env.OPENAI_API_KEY;
-    const envGemini = process.env.GEMINI_API_KEY;
-
-    if (envGroq) candidateKeys.push({ name: 'Groq Env Key', provider: 'Groq', api_key: envGroq, model: 'llama-3.3-70b-versatile', base_url: 'https://api.groq.com/openai/v1' });
-    if (envOpenAI) candidateKeys.push({ name: 'OpenAI Env Key', provider: 'OpenAI', api_key: envOpenAI, model: 'gpt-4o-mini', base_url: 'https://api.openai.com/v1' });
-    if (envGemini) candidateKeys.push({ name: 'Gemini Env Key', provider: 'Google', api_key: envGemini, model: 'gemini-1.5-flash', base_url: 'https://generativelanguage.googleapis.com/v1beta' });
-
-    // Format Candidate Profile Context
-    const candidateSkills = Array.isArray(candidateProfile.skills) ? candidateProfile.skills.join(', ') : (candidateProfile.skills || 'Python, SQL, Linux');
-    const resumeExcerpt = (candidateProfile.resume_text || '').substring(0, 1000).replace(/\n+/g, ' ');
-
-    const candidateSummary = `
-Candidate Name: ${candidateProfile.full_name || candidateProfile.name || 'Candidate'}
-Target Role / Specialization: ${candidateProfile.title || candidateProfile.resume_field || 'Software / Cybersecurity Professional'}
-Primary Domain: ${candidateProfile.resume_field || 'Software Engineering'}
-Technical Skills: ${candidateSkills}
-Experience Level: ${typeof candidateProfile.experience === 'string' ? candidateProfile.experience : JSON.stringify(candidateProfile.experience || '2+ Years')}
-Education Background: ${typeof candidateProfile.education === 'string' ? candidateProfile.education : JSON.stringify(candidateProfile.education || 'Degree in Computer Science')}
-Portfolio / GitHub Links: GitHub (${candidateProfile.github_url || 'N/A'}), LinkedIn (${candidateProfile.linkedin_url || 'N/A'})
-Projects: ${JSON.stringify(candidateProfile.projects || [])}
-Certifications: ${JSON.stringify(candidateProfile.certifications || [])}
-Location: ${candidateProfile.location || 'Remote'}
-Resume Excerpt: ${resumeExcerpt || 'No raw resume text provided.'}
-`;
-
-    // Filter job subset (up to 15 jobs for fast LLM response)
-    const jobSubset = activeJobs.slice(0, 15).map(j => ({
-      id: j.id,
-      title: j.title || 'Role',
-      company: j.company_name || j.company || 'Enterprise',
-      department: j.department || 'Engineering',
-      skills: Array.isArray(j.skills) ? j.skills : (typeof j.skills === 'string' ? j.skills.split(',') : []),
-      experience_level: j.experience_level || 'Mid Level',
-      location: j.location || 'Remote',
-      requirements: (j.requirements || j.description || '').substring(0, 350)
-    }));
-
-    const llmPrompt = `You are an enterprise AI Candidate-Job Matching Engine built on high-precision multi-dimensional scoring.
-Analyze the Candidate Profile and evaluate how strongly it matches each Active Job Posting across 4 core dimensions:
-1. Technical Skills Overlap (40% Weight)
-2. Domain & Field Alignment (20% Weight)
-3. Experience & Seniority Compatibility (20% Weight)
-4. Projects & Practical Portfolio Fit (20% Weight)
-
-CANDIDATE PROFILE:
-${candidateSummary}
-
-ACTIVE JOB POSTINGS TO EVALUATE:
-${JSON.stringify(jobSubset, null, 2)}
-
-INSTRUCTIONS:
-Evaluate every job in the list. Compute an aggregate matchScore (0 to 100%).
-Return ONLY a valid JSON array of objects sorted strictly from HIGHEST matchScore to LOWEST matchScore:
-
-[
-  {
-    "jobId": 166,
-    "matchScore": 92,
-    "scoreBreakdown": {
-      "skills": 95,
-      "domain": 90,
-      "experience": 90,
-      "projects": 85
-    },
-    "reason": "Direct alignment in Cybersecurity, SIEM threat hunting, Wireshark packet analysis, and Python scripting.",
-    "matchedSkills": ["Python", "Wireshark", "SIEM", "Linux"],
-    "missingSkills": ["Metasploit", "KQL"],
-    "suggestedAction": "Highlight your SOC Automation project on your resume to boost recruiter response by 35%.",
-    "recommendationLevel": "Strong Match"
-  }
-]`;
-
-    let llmRecommendations = null;
-
-    // Helper function to update API Key used_quota in Supabase api_credentials table
-    const incrementApiKeyQuota = async (keyObj) => {
-      if (!supabaseAdmin || !keyObj) return;
+    // Determine Groq API credentials
+    let groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
       try {
-        let targetId = keyObj.id;
-        if (!targetId) {
-          // If key was loaded from process.env, search DB for corresponding provider key
-          const { data: dbMatch } = await supabaseAdmin
-            .from('api_credentials')
-            .select('id, used_quota')
-            .or(`provider.ilike.%${keyObj.provider}%,name.ilike.%${keyObj.provider}%`)
-            .limit(1);
-          if (dbMatch && dbMatch[0]) {
-            targetId = dbMatch[0].id;
+        const { data: dbKeys } = await supabaseAdmin
+          .from('api_credentials')
+          .select('*')
+          .eq('status', 'Active');
+        if (Array.isArray(dbKeys)) {
+          const groqKeyObj = dbKeys.find(k => (k.provider?.toLowerCase().includes('groq') || k.api_key?.startsWith('gsk_')));
+          if (groqKeyObj?.api_key) {
+            groqApiKey = groqKeyObj.api_key;
           }
         }
-
-        if (targetId) {
-          const { data: currentRec } = await supabaseAdmin
-            .from('api_credentials')
-            .select('used_quota')
-            .eq('id', targetId)
-            .single();
-
-          const currentUsed = currentRec ? Number(currentRec.used_quota || 0) : 0;
-          const newUsed = currentUsed + 1;
-
-          await supabaseAdmin
-            .from('api_credentials')
-            .update({
-              used_quota: newUsed,
-              last_updated: new Date().toISOString()
-            })
-            .eq('id', targetId);
-          console.log(`[API Management] Quota updated for Key ID ${targetId}: ${currentUsed} -> ${newUsed}`);
-        }
-      } catch (err) {
-        console.error('API Management quota update notice:', err);
-      }
-    };
-
-    // Try calling LLM Providers
-    for (const keyObj of candidateKeys) {
-      try {
-        if (keyObj.provider === 'Google' || keyObj.name?.includes('Gemini')) {
-          const endpoint = `${keyObj.base_url || 'https://generativelanguage.googleapis.com/v1beta'}/models/gemini-1.5-flash:generateContent?key=${keyObj.api_key}`;
-          const gRes = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: llmPrompt }] }],
-              generationConfig: { responseMimeType: 'application/json', temperature: 0.15 }
-            })
-          });
-          const gData = await gRes.json();
-          const rawText = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            llmRecommendations = JSON.parse(cleanText);
-            if (Array.isArray(llmRecommendations) && llmRecommendations.length > 0) {
-              await incrementApiKeyQuota(keyObj);
-              break;
-            }
-          }
-        } else if (keyObj.base_url || keyObj.provider === 'Groq' || keyObj.provider === 'OpenAI') {
-          const baseUrl = keyObj.base_url || 'https://api.groq.com/openai/v1';
-          const modelName = keyObj.model || (keyObj.provider === 'Groq' ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini');
-          const oRes = await fetch(`${baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${keyObj.api_key}`
-            },
-            body: JSON.stringify({
-              model: modelName,
-              messages: [{ role: 'user', content: llmPrompt }],
-              temperature: 0.15
-            })
-          });
-          const oData = await oRes.json();
-          const rawText = oData?.choices?.[0]?.message?.content;
-          if (rawText) {
-            const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            llmRecommendations = JSON.parse(cleanText);
-            if (Array.isArray(llmRecommendations) && llmRecommendations.length > 0) {
-              await incrementApiKeyQuota(keyObj);
-              break;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`LLM Provider ${keyObj.name} notice:`, err.message);
-      }
+      } catch (e) {}
     }
 
-    // 4. Advanced 5-Dimension Algorithmic Fallback Engine
-    if (!Array.isArray(llmRecommendations) || llmRecommendations.length === 0) {
-      const candSkillList = (candidateSkills.toLowerCase().split(/[\s,]+/).filter(Boolean));
-      const candDomain = (candidateProfile.resume_field || candidateProfile.title || '').toLowerCase();
+    // Parse candidate skills & projects safely from resume/profile
+    const candidateSkillsStr = Array.isArray(candidateProfile.skills) ? candidateProfile.skills.join(', ') : (candidateProfile.skills || 'Python, SQL');
+    const candidateProjectsList = Array.isArray(candidateProfile.projects) ? candidateProfile.projects : [];
+    const resumeTextSnippet = (candidateProfile.resume_text || '').substring(0, 1500).replace(/\n+/g, ' ');
 
-      llmRecommendations = jobSubset.map(j => {
-        const jobSkills = j.skills.map(s => String(s).trim());
-        const lowerJobSkills = jobSkills.map(s => s.toLowerCase());
+    const candidateResumeContext = `
+Candidate Name: ${candidateProfile.full_name || candidateProfile.name || 'Candidate'}
+Current Title / Specialization: ${candidateProfile.title || candidateProfile.resume_field || 'Software Engineer'}
+Primary Domain: ${candidateProfile.resume_field || 'Software Engineering'}
+Technical Skills (Parsed from Resume): ${candidateSkillsStr}
+Experience Level: ${typeof candidateProfile.experience === 'string' ? candidateProfile.experience : JSON.stringify(candidateProfile.experience || '2+ Years')}
+Education: ${typeof candidateProfile.education === 'string' ? candidateProfile.education : JSON.stringify(candidateProfile.education || 'Degree in Computer Science')}
+Candidate Projects (Parsed from Resume): ${JSON.stringify(candidateProjectsList)}
+Certifications: ${JSON.stringify(candidateProfile.certifications || [])}
+Location: ${candidateProfile.location || 'Remote'}
+Raw Resume Text Excerpt: ${resumeTextSnippet || 'No raw resume text provided.'}
+`;
 
-        const matched = [];
-        const missing = [];
+    // 3. Fetch Existing Cached Matches for candidate to skip already-analyzed jobs & save tokens
+    let existingMatchesMap = {};
+    const forceRefresh = body.forceRefresh === true;
+    if (candidateProfile?.id && supabaseAdmin && !forceRefresh) {
+      try {
+        const { data: cachedMatches } = await supabaseAdmin
+          .from('candidate_job_matches')
+          .select('*')
+          .eq('candidate_id', candidateProfile.id);
 
-        lowerJobSkills.forEach((s, idx) => {
-          if (candSkillList.some(cs => cs.includes(s) || s.includes(cs))) {
-            matched.push(jobSkills[idx]);
+        if (Array.isArray(cachedMatches)) {
+          cachedMatches.forEach(m => {
+            if (m.job_id) {
+              existingMatchesMap[String(m.job_id)] = m;
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
+    // Process jobs ONE AT A TIME (Sequential Execution Pipeline with Token Cache)
+    const targetJobs = activeJobs.slice(0, Math.min(limit, 25));
+    const processedRecommendations = [];
+
+    for (const job of targetJobs) {
+      // CHECK IF JOB WAS ALREADY ANALYZED & CACHED IN DB FOR THIS CANDIDATE
+      const cachedMatch = existingMatchesMap[String(job.id)];
+      if (cachedMatch && !forceRefresh) {
+        // Reuse existing cached analysis object without calling Groq API! Token cost = 0!
+        const cachedResultObj = {
+          jobId: job.id,
+          jobTitle: job.title || job.job_title || 'Software Role',
+          company: job.company_name || job.company || 'Tech Enterprise',
+          location: job.location || 'Remote',
+          matchScore: cachedMatch.match_score || 85,
+          recommendation: cachedMatch.recommendation || 'APPLY',
+          recommendationLabel: cachedMatch.recommendation_label || 'Strong Match',
+          executiveSummary: cachedMatch.executive_summary || cachedMatch.reasoning || 'Evidence-backed candidate recommendation.',
+          scoreBreakdown: cachedMatch.score_breakdown || { overall: cachedMatch.match_score || 85 },
+          projectSpotlight: cachedMatch.project_spotlight || null,
+          whyRecommended: cachedMatch.why_recommended || [],
+          whyNotRecommended: cachedMatch.why_not_recommended || [],
+          matchedRequirements: cachedMatch.matched_requirements || [],
+          missingRequirements: cachedMatch.missing_requirements || [],
+          strongMatches: cachedMatch.matched_skills || [],
+          gaps: cachedMatch.missing_skills || [],
+          matchedSkills: cachedMatch.matched_skills || [],
+          missingSkills: cachedMatch.missing_skills || [],
+          finalReasoning: cachedMatch.reasoning || 'Evidence-backed recommendation.',
+          reason: cachedMatch.reasoning || 'Evidence-backed recommendation.',
+          isCached: true // Zero LLM Tokens Consumed!
+        };
+        processedRecommendations.push(cachedResultObj);
+        continue; // Skip Groq LLM API call entirely for this job!
+      }
+
+      const jobUrl = job.job_url || job.url || null;
+
+      // Step A: Webpage Extraction Layer (Scrape or retrieve from cache)
+      let websiteData = null;
+      if (jobUrl) {
+        websiteData = await scrapeJobWebpage(jobUrl, supabaseAdmin);
+      }
+
+      // Step B: Build Single Normalized Job Object
+      const normalizedJob = {
+        job_id: job.id,
+        job_title: job.title || job.job_title || 'Software Role',
+        company: job.company_name || job.company || 'Tech Enterprise',
+        location: job.location || 'Remote',
+        database_description: (job.description || '').substring(0, 800),
+        database_requirements: job.requirements || [],
+        database_skills: Array.isArray(job.skills) ? job.skills : (typeof job.skills === 'string' ? job.skills.split(',') : []),
+        website_description: websiteData?.website_description || null,
+        website_requirements: websiteData?.website_requirements || [],
+        website_responsibilities: websiteData?.website_responsibilities || [],
+        website_skills: websiteData?.website_skills || [],
+        job_url: jobUrl
+      };
+
+      // Step C: Construct Explainable Groq LLM Prompt for Single Job Analysis
+      const singleJobPrompt = `You are an Enterprise AI Candidate-Job Matching Engine built on Explainable Recommendation & Project Synergy.
+
+CANDIDATE RESUME DATA:
+${candidateResumeContext}
+
+NORMALIZED JOB POSTING DATA (Database + Webpage):
+${JSON.stringify(normalizedJob, null, 2)}
+
+STRICT RULES & CONCISE OUTPUT:
+1. EXECUTIVE SUMMARY: Write a strictly 2 to 4 line executive summary ("executive_summary") detailing the real evidence match without mock data or generic fluff.
+2. RECOMMENDATION VALUES: Must be strictly "APPLY", "CONSIDER", or "DO_NOT_APPLY".
+3. EXPLAINABILITY (why_recommended & why_not_recommended):
+   - Every item MUST pair: "fact" (Job requirement) + "evidence" (Candidate resume evidence).
+   - Keep points TO THE POINT, factual, and concise. No fluff!
+4. RELEVANT PROJECT ADVANTAGE SPOTLIGHT (project_spotlight):
+   - Check candidate's projects. If candidate has a relevant project for this job role, even if exact skill keywords don't match 100%, set "has_spotlight": true and explain how building this project demonstrates practical competence and increases their hiring probability!
+5. SCORE WEIGHTING:
+   - Skills: 30%, Experience: 25%, Responsibilities: 20%, Projects: 10%, Education: 10%, Other: 5%.
+   Return final match_score from 0 to 100.
+
+Return ONLY a valid JSON object matching this exact schema:
+{
+  "match_score": 87,
+  "recommendation": "APPLY",
+  "recommendation_label": "Strong Match",
+  "confidence": 92,
+  "executive_summary": "The candidate's resume demonstrates direct hands-on experience with Python and REST API architectures matching this position's core tech stack. Building the 'Backend REST API Suite' project provides strong practical evidence of production capability. While Docker experience is not explicitly stated in the resume, the core engineering foundation aligns exceptionally well with the role requirements.",
+  "score_breakdown": {
+    "skills": 92,
+    "experience": 85,
+    "responsibilities": 88,
+    "projects": 84,
+    "education": 80
+  },
+  "project_spotlight": {
+    "has_spotlight": true,
+    "project_title": "Backend REST API Suite",
+    "reasoning": "Even if exact keyword requirements don't match 100%, your project 'Backend REST API Suite' demonstrates practical hands-on experience directly relevant to this backend role. Highlighting this project on your application will significantly boost your hiring chances!"
+  },
+  "why_recommended": [
+    {
+      "fact": "Job requires Python and REST API development.",
+      "evidence": "Candidate has Python and REST API experience in previous projects."
+    },
+    {
+      "fact": "Job requires PostgreSQL experience.",
+      "evidence": "Candidate lists PostgreSQL in technical skills and backend projects."
+    }
+  ],
+  "why_not_recommended": [
+    {
+      "fact": "Job requires Docker experience.",
+      "evidence": "Docker experience is not found in the resume."
+    }
+  ],
+  "matched_requirements": [
+    {
+      "requirement": "Python & REST APIs",
+      "candidate_evidence": "Python and REST API experience in backend projects",
+      "status": "MATCH"
+    }
+  ],
+  "missing_requirements": [
+    {
+      "requirement": "Docker",
+      "candidate_evidence": "No Docker experience found in resume",
+      "status": "NOT_MENTIONED",
+      "severity": "MEDIUM"
+    }
+  ],
+  "strong_matches": ["Python", "REST APIs", "PostgreSQL"],
+  "gaps": ["Docker"],
+  "final_reasoning": "Apply — strong alignment with core requirements. Docker is the main gap."
+}`;
+
+      let matchAnalysis = null;
+
+      // Step D: Call Groq API with Retry Logic
+      if (groqApiKey) {
+        let retries = 2;
+        while (retries >= 0 && !matchAnalysis) {
+          try {
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${groqApiKey}`
+              },
+              body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: singleJobPrompt }],
+                response_format: { type: 'json_object' },
+                temperature: 0.15
+              })
+            });
+
+            if (groqRes.status === 429) {
+              console.warn(`[Groq Rate Limit 429] Retrying in 1s for job #${job.id}...`);
+              await new Promise(r => setTimeout(r, 1000));
+              retries--;
+              continue;
+            }
+
+            if (groqRes.ok) {
+              const groqData = await groqRes.json();
+              const contentText = groqData?.choices?.[0]?.message?.content;
+              if (contentText) {
+                const parsed = JSON.parse(contentText.replace(/```json/gi, '').replace(/```/g, '').trim());
+                if (parsed && typeof parsed.match_score === 'number' && parsed.recommendation) {
+                  matchAnalysis = parsed;
+                }
+              }
+            }
+          } catch (groqErr) {
+            console.warn(`[Groq API Exception] Job #${job.id}:`, groqErr.message);
+          }
+          retries--;
+        }
+      }
+
+      // Step E: Deterministic Fallback if Groq API call fails or key unavailable
+      if (!matchAnalysis) {
+        const candSkillList = candidateSkillsStr.toLowerCase().split(/[\s,]+/).filter(Boolean);
+        const jobSkillList = [...normalizedJob.database_skills, ...normalizedJob.website_skills].map(s => String(s).trim());
+
+        const matchedSkills = [];
+        const missingSkills = [];
+
+        jobSkillList.forEach(s => {
+          if (candSkillList.some(cs => cs.includes(s.toLowerCase()) || s.toLowerCase().includes(cs))) {
+            matchedSkills.push(s);
           } else {
-            missing.push(jobSkills[idx]);
+            missingSkills.push(s);
           }
         });
 
-        // 1. Skills Score (40%)
-        const skillsScore = jobSkills.length > 0
-          ? Math.round((matched.length / jobSkills.length) * 100)
-          : (matched.length > 0 ? 85 : 60);
+        const skillsScore = jobSkillList.length > 0
+          ? Math.round((matchedSkills.length / jobSkillList.length) * 100)
+          : 75;
 
-        // 2. Domain Score (20%)
-        const jobText = `${j.title} ${j.department} ${j.requirements}`.toLowerCase();
-        let domainScore = 60;
-        if (candDomain && jobText.includes(candDomain)) {
-          domainScore = 95;
-        } else if (candDomain.includes('cyber') && (jobText.includes('sec') || jobText.includes('soc') || jobText.includes('audit'))) {
-          domainScore = 90;
-        } else if ((candDomain.includes('software') || candDomain.includes('web')) && (jobText.includes('developer') || jobText.includes('engineer'))) {
-          domainScore = 90;
-        }
+        const finalScore = Math.min(Math.max(skillsScore, 65), 96);
 
-        // 3. Experience Score (20%)
-        const experienceScore = candidateProfile.experience ? 85 : 75;
+        let fallbackRecommendation = 'CONSIDER';
+        if (finalScore >= 85) fallbackRecommendation = 'APPLY';
+        else if (finalScore < 70) fallbackRecommendation = 'DO_NOT_APPLY';
 
-        // 4. Projects Score (20%)
-        const projectScore = (Array.isArray(candidateProfile.projects) && candidateProfile.projects.length > 0) ? 90 : 75;
+        const whyRecommended = matchedSkills.slice(0, 3).map(sk => ({
+          fact: `Job requires ${sk} experience.`,
+          evidence: `Candidate lists ${sk} in technical skills parsed from resume.`
+        }));
 
-        // Weighted Aggregate Match Score
-        const finalScore = Math.min(
-          Math.round((skillsScore * 0.4) + (domainScore * 0.2) + (experienceScore * 0.2) + (projectScore * 0.2)),
-          98
-        );
+        const whyNotRecommended = missingSkills.slice(0, 2).map(ms => ({
+          fact: `Job lists ${ms} requirement.`,
+          evidence: `No ${ms} experience found in candidate resume.`
+        }));
 
-        return {
-          jobId: j.id,
-          matchScore: finalScore,
-          scoreBreakdown: {
+        const firstProject = candidateProjectsList[0];
+
+        matchAnalysis = {
+          match_score: finalScore,
+          recommendation: fallbackRecommendation,
+          recommendation_label: finalScore >= 85 ? 'Strong Match' : (finalScore >= 75 ? 'Good Fit' : 'Partial Match'),
+          confidence: 88,
+          executive_summary: `Candidate profile demonstrates strong technical foundation in ${candidateProfile.resume_field || 'Engineering'} with verified skills in ${matchedSkills.slice(0, 3).join(', ') || 'core software tools'}. Practical experience aligns well with the key responsibilities for ${normalizedJob.job_title} at ${normalizedJob.company}. Address minor tool gaps during application to maximize hiring response.`,
+          score_breakdown: {
             skills: skillsScore,
-            domain: domainScore,
-            experience: experienceScore,
-            projects: projectScore
+            experience: 80,
+            responsibilities: 75,
+            projects: 80,
+            education: 80
           },
-          reason: `High compatibility in ${j.department || 'Technical Domain'}. Candidate demonstrates ${matched.length > 0 ? matched.join(', ') : 'core domain skills'} required for ${j.title}.`,
-          matchedSkills: matched.length > 0 ? matched : ['Problem Solving', 'Technical Adaptability'],
-          missingSkills: missing.slice(0, 3),
-          suggestedAction: `Tailor your resume to feature ${matched.slice(0, 2).join(' and ')} to maximize candidate ranking.`,
-          recommendationLevel: finalScore >= 85 ? 'Strong Match' : 'Good Fit'
+          project_spotlight: firstProject ? {
+            has_spotlight: true,
+            project_title: firstProject.title || 'Technical Project',
+            reasoning: `Even if skill keywords don't match 100%, your project '${firstProject.title || 'Technical Project'}' shows practical capability relevant to ${normalizedJob.job_title}. Emphasize this project to improve your response rate!`
+          } : null,
+          why_recommended: whyRecommended.length > 0 ? whyRecommended : [{
+            fact: `Job aligns with ${normalizedJob.job_title} domain.`,
+            evidence: `Candidate demonstrates engineering background in resume.`
+          }],
+          why_not_recommended: whyNotRecommended.length > 0 ? whyNotRecommended : [{
+            fact: `Job requires additional specialized tooling.`,
+            evidence: `Not explicitly listed in candidate resume.`
+          }],
+          matched_requirements: matchedSkills.map(s => ({
+            requirement: s,
+            candidate_evidence: `${s} listed in resume skills`,
+            status: 'MATCH'
+          })),
+          missing_requirements: missingSkills.map(s => ({
+            requirement: s,
+            candidate_evidence: `No ${s} experience found in resume`,
+            status: 'NOT_MENTIONED',
+            severity: 'MEDIUM'
+          })),
+          strong_matches: Array.from(new Set(matchedSkills.length > 0 ? matchedSkills : ['Core Engineering'])),
+          gaps: Array.from(new Set(missingSkills.slice(0, 3))),
+          final_reasoning: `${fallbackRecommendation === 'APPLY' ? 'Recommended to apply.' : 'Worth considering.'} Strong core fit with minor skill gaps.`
         };
-      });
+      }
+
+      // Format complete final job object for output
+      const resultObj = {
+        ...job,
+        jobId: job.id,
+        matchScore: matchAnalysis.match_score || 75,
+        recommendation: matchAnalysis.recommendation || 'CONSIDER',
+        recommendationLabel: matchAnalysis.recommendation_label || 'Match',
+        confidence: matchAnalysis.confidence || 90,
+        executiveSummary: matchAnalysis.executive_summary || matchAnalysis.executiveSummary || null,
+        scoreBreakdown: matchAnalysis.score_breakdown || {
+          skills: 75,
+          experience: 75,
+          responsibilities: 75,
+          projects: 75,
+          education: 75
+        },
+        projectSpotlight: matchAnalysis.project_spotlight || null,
+        whyRecommended: Array.isArray(matchAnalysis.why_recommended) ? matchAnalysis.why_recommended : [],
+        whyNotRecommended: Array.isArray(matchAnalysis.why_not_recommended) ? matchAnalysis.why_not_recommended : [],
+        matchedRequirements: Array.isArray(matchAnalysis.matched_requirements) ? matchAnalysis.matched_requirements : [],
+        missingRequirements: Array.isArray(matchAnalysis.missing_requirements) ? matchAnalysis.missing_requirements : [],
+        strongMatches: Array.isArray(matchAnalysis.strong_matches) ? matchAnalysis.strong_matches : [],
+        gaps: Array.isArray(matchAnalysis.gaps) ? matchAnalysis.gaps : [],
+        finalReasoning: matchAnalysis.final_reasoning || 'Evidence-backed candidate recommendation.',
+        reason: matchAnalysis.final_reasoning || 'Evidence-backed candidate recommendation.',
+        matchedSkills: matchAnalysis.strong_matches || [],
+        missingSkills: matchAnalysis.gaps || [],
+        extractedJobData: websiteData
+      };
+
+      // Step F: Save match result to Supabase database (candidate_job_matches)
+      if (candidateProfile?.id && supabaseAdmin) {
+        try {
+          await supabaseAdmin
+            .from('candidate_job_matches')
+            .upsert({
+              candidate_id: candidateProfile.id,
+              job_id: job.id,
+              match_score: resultObj.matchScore,
+              recommendation: resultObj.recommendation,
+              recommendation_label: resultObj.recommendationLabel,
+              executive_summary: resultObj.executiveSummary,
+              project_spotlight: resultObj.projectSpotlight,
+              matched_skills: resultObj.matchedSkills,
+              missing_skills: resultObj.missingSkills,
+              why_recommended: resultObj.whyRecommended,
+              why_not_recommended: resultObj.whyNotRecommended,
+              matched_requirements: resultObj.matchedRequirements,
+              missing_requirements: resultObj.missingRequirements,
+              reasoning: resultObj.finalReasoning,
+              score_breakdown: resultObj.scoreBreakdown,
+              analysis_timestamp: new Date().toISOString()
+            }, { onConflict: 'candidate_id,job_id' });
+        } catch (e) {
+          // Ignore table missing errors gracefully
+        }
+      }
+
+      processedRecommendations.push(resultObj);
     }
 
-    // 5. Merge AI Match Details Back to Full Job Objects
-    const safeLlmRecs = Array.isArray(llmRecommendations) ? llmRecommendations.filter(r => r && typeof r === 'object') : [];
-    const recMap = new Map(safeLlmRecs.map(r => [Number(r.jobId || r.id), r]));
-
-    const rankedJobs = activeJobs.map(job => {
-      const llmInfo = recMap.get(Number(job.id)) || {
-        matchScore: 75,
-        scoreBreakdown: { skills: 75, domain: 75, experience: 75, projects: 75 },
-        reason: 'Recommended based on candidate technical profile and active career field.',
-        matchedSkills: Array.isArray(job.skills) ? job.skills.slice(0, 3) : ['Domain Skills'],
-        missingSkills: [],
-        suggestedAction: 'Ensure your resume keywords match the job posting description.',
-        recommendationLevel: 'Recommended'
-      };
-
-      return {
-        ...job,
-        matchScore: llmInfo.matchScore || 75,
-        scoreBreakdown: llmInfo.scoreBreakdown || { skills: 75, domain: 75, experience: 75, projects: 75 },
-        reason: llmInfo.reason || 'High domain relevance',
-        matchedSkills: Array.isArray(llmInfo.matchedSkills) ? llmInfo.matchedSkills : [],
-        missingSkills: Array.isArray(llmInfo.missingSkills) ? llmInfo.missingSkills : [],
-        suggestedAction: llmInfo.suggestedAction || 'Tailor your resume skills section.',
-        recommendationLevel: llmInfo.recommendationLevel || 'Match'
-      };
-    });
-
     // Sort strictly from highest match score to lowest match score
-    rankedJobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+    processedRecommendations.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+    // Save highest recommendation score to candidate's profile in Supabase candidates_profiles table
+    if (candidateProfile?.id && supabaseAdmin && processedRecommendations.length > 0) {
+      const highestScore = processedRecommendations[0]?.matchScore || 85;
+      try {
+        await supabaseAdmin
+          .from('candidates_profiles')
+          .update({ 
+            overall_match: highestScore,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', candidateProfile.id);
+      } catch (saveErr) {
+        console.warn('Notice updating candidates_profiles overall_match:', saveErr.message);
+      }
+    }
 
     return Response.json({
       success: true,
       candidateProfile: {
+        id: candidateProfile.id,
         name: candidateProfile.full_name || candidateProfile.name,
         title: candidateProfile.title,
         domain: candidateProfile.resume_field
       },
-      totalMatchedJobs: rankedJobs.length,
-      recommendations: rankedJobs
+      totalMatchedJobs: processedRecommendations.length,
+      recommendations: processedRecommendations
     });
 
   } catch (err) {
-    console.error('LLM Recommendation Route Error:', err);
-    return Response.json({ error: 'Failed to generate LLM job recommendations', details: err.message }, { status: 500 });
+    console.error('Groq Explainable Job Matching Route Error:', err);
+    return Response.json({ error: 'Failed to complete Groq explainable job matching pipeline', details: err.message }, { status: 500 });
   }
 }

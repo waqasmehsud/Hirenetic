@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import './scriptsInventory.css';
 
@@ -120,6 +121,7 @@ const icons = {
 
 /* ========================= MAIN COMPONENT ========================= */
 export default function ScriptsInventoryPage() {
+  const router = useRouter();
   // ---- State ----
   const [theme, setTheme] = useState('dark');
   const [scripts, setScripts] = useState([]);
@@ -643,7 +645,7 @@ export default function ScriptsInventoryPage() {
           <div>
             <div className="si-page-title">Custom Scripts</div>
             <div className="si-breadcrumb">
-              Admin <span className="si-breadcrumb-sep">/</span>
+              <span onClick={() => router.replace('/admin-panel')} style={{ cursor: 'pointer', textDecoration: 'underline' }}>Admin</span> <span className="si-breadcrumb-sep">/</span>
               <span>Automation</span> <span className="si-breadcrumb-sep">/</span>
               <span>CustomScripts</span>
             </div>

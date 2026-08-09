@@ -1,7 +1,18 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
+import { BRAND_CONFIG } from '@/theme/branding.config';
 import { ArrowRight, Code2, ShieldCheck, Lock, CheckCircle2, UserCheck, Briefcase } from 'lucide-react';
 
 export default function LandingPage() {
+  const router = useRouter();
+
+  const handleNavReplace = (path) => (e) => {
+    e.preventDefault();
+    router.replace(path);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-blue-100">
       
@@ -12,15 +23,16 @@ export default function LandingPage() {
               <Code2 className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-semibold tracking-tight text-slate-900">
-              Home
+              {BRAND_CONFIG.companyName}
             </span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
             <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How it Works</a>
             <a href="#trust" className="hover:text-slate-900 transition-colors">Trust & Privacy</a>
-            <a href="/candidate-panel/login" className="hover:text-slate-900 transition-colors">Log in</a>
+            <a href="/candidate-panel/login" onClick={handleNavReplace('/candidate-panel/login')} className="hover:text-slate-900 transition-colors">Log in</a>
             <a 
               href="/candidate-panel/signup" 
+              onClick={handleNavReplace('/candidate-panel/signup')}
               className="px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white transition-colors"
             >
               Create Profile
@@ -36,12 +48,13 @@ export default function LandingPage() {
           </h1>
           
           <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
-            A career platform built for tech professionals. We look beyond traditional resumes by verifying your GitHub, portfolio, and actual code—connecting you directly with vetted engineering teams.
+            The AI-powered career network built for developers. We verify your GitHub, production code, and real technical achievements—connecting you directly with top engineering teams without ATS keyword filters.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a 
               href="/candidate-panel/signup" 
+              onClick={handleNavReplace('/candidate-panel/signup')}
               className="w-full sm:w-auto px-6 py-3 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center justify-center gap-2 transition-colors"
             >
               Create Candidate Profile
@@ -49,6 +62,7 @@ export default function LandingPage() {
             </a>
             <a 
               href="/hr-panel/login" 
+              onClick={handleNavReplace('/hr-panel/login')}
               className="w-full sm:w-auto px-6 py-3 rounded-md bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium flex items-center justify-center transition-colors"
             >
               I am an Employer
@@ -183,9 +197,9 @@ export default function LandingPage() {
           <div className="flex flex-wrap justify-center items-center gap-6 font-medium text-slate-300">
             <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
             <a href="#trust" className="hover:text-white transition-colors">Trust & Privacy</a>
-            <a href="/hr-panel/login" className="hover:text-white transition-colors">For Employers</a>
-            <a href="/candidate-panel/signup" className="hover:text-white transition-colors">Create Profile</a>
-            <a href="/admin-panel" className="hover:text-white transition-colors">Admin Portal</a>
+            <a href="/hr-panel/login" onClick={handleNavReplace('/hr-panel/login')} className="hover:text-white transition-colors">For Employers</a>
+            <a href="/candidate-panel/signup" onClick={handleNavReplace('/candidate-panel/signup')} className="hover:text-white transition-colors">Create Profile</a>
+            <a href="/admin-panel" onClick={handleNavReplace('/admin-panel')} className="hover:text-white transition-colors">Admin Portal</a>
           </div>
         </div>
       </footer>

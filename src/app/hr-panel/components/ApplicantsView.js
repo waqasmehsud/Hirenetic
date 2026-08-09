@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Search, Briefcase, Filter, Percent, Users, ShieldCheck, ExternalLink, Calendar } from 'lucide-react';
+import { Search, Briefcase, Filter, Percent, Users, ShieldCheck, ExternalLink, Calendar, Eye } from 'lucide-react';
 
 export default function ApplicantsView({
   jobs = [],
   applicants = [],
   filteredApplicants: propFilteredApplicants,
+  globalSearch = '',
   applicantSearch = '',
   setApplicantSearch,
   applicantJobFilter = 'all',
@@ -23,6 +24,8 @@ export default function ApplicantsView({
   const safeJobs = Array.isArray(jobs) ? jobs : [];
   const safeApplicants = Array.isArray(applicants) ? applicants : [];
 
+  const activeQuery = (globalSearch || applicantSearch).trim().toLowerCase();
+
   const filteredApplicants = propFilteredApplicants || safeApplicants.filter(cand => {
     if (applicantJobFilter !== 'all') {
       const filterVal = String(applicantJobFilter).toLowerCase();
@@ -36,12 +39,11 @@ export default function ApplicantsView({
     }
     if (applicantStatusFilter !== 'all' && (cand.status || cand.application_status) !== applicantStatusFilter) return false;
     if (Number(applicantScoreFilter) > 0 && (cand.matchScore || 0) < Number(applicantScoreFilter)) return false;
-    if (applicantSearch.trim()) {
-      const q = applicantSearch.toLowerCase();
-      const nameMatch = (cand.name || cand.full_name || '').toLowerCase().includes(q);
-      const emailMatch = (cand.email || '').toLowerCase().includes(q);
-      const titleMatch = (cand.jobTitle || cand.title || cand.job_title || '').toLowerCase().includes(q);
-      const companyMatch = (cand.company || cand.company_name || '').toLowerCase().includes(q);
+    if (activeQuery) {
+      const nameMatch = (cand.name || cand.full_name || '').toLowerCase().includes(activeQuery);
+      const emailMatch = (cand.email || '').toLowerCase().includes(activeQuery);
+      const titleMatch = (cand.jobTitle || cand.title || cand.job_title || '').toLowerCase().includes(activeQuery);
+      const companyMatch = (cand.company || cand.company_name || '').toLowerCase().includes(activeQuery);
       return nameMatch || emailMatch || titleMatch || companyMatch;
     }
     return true;
@@ -61,38 +63,44 @@ export default function ApplicantsView({
 
   return (
     <section className="view-section active">
-      {/* Filters and Search Bar */}
-      <div className="filter-card" style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px 20px', marginBottom: '20px' }}>
-        <div className="filter-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-          <div className="filter-field search-field">
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Search size={14} /> Search Applicant</label>
-            <input
-              type="text"
-              placeholder="Search by name, email, company or title..."
-              value={applicantSearch}
-              onChange={(e) => setApplicantSearch && setApplicantSearch(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
-            />
-          </div>
-
-          <div className="filter-field">
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Briefcase size={14} /> Job Opening</label>
+      {/* Sleek Enterprise Filter Toolbar */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', flex: 1 }}>
+          
+          {/* Job Opening Filter Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Briefcase size={14} style={{ color: '#2563eb' }} />
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Job Role:</span>
             <select
               value={applicantJobFilter}
               onChange={(e) => setApplicantJobFilter && setApplicantJobFilter(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+              style={{ padding: '6.5px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '12.5px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '600', cursor: 'pointer' }}
             >
-              <option value="all">All Job Openings</option>
+              <option value="all">All Job Openings ({safeJobs.length})</option>
               {safeJobs.map(j => <option value={j.id} key={j.id}>{j.title}</option>)}
             </select>
           </div>
 
-          <div className="filter-field">
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Filter size={14} /> Status</label>
+          {/* Status Filter Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Filter size={14} style={{ color: '#2563eb' }} />
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Status:</span>
             <select
               value={applicantStatusFilter}
               onChange={(e) => setApplicantStatusFilter && setApplicantStatusFilter(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+              style={{ padding: '6.5px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '12.5px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '600', cursor: 'pointer' }}
             >
               <option value="all">All Statuses</option>
               <option value="Redirected">Redirected</option>
@@ -104,18 +112,25 @@ export default function ApplicantsView({
             </select>
           </div>
 
-          <div className="filter-field">
-            <label style={{ fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><Percent size={14} /> Min Match Score</label>
+          {/* Min Match Score Filter Dropdown */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Percent size={14} style={{ color: '#2563eb' }} />
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>Min Score:</span>
             <select
               value={applicantScoreFilter}
               onChange={(e) => setApplicantScoreFilter && setApplicantScoreFilter(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none' }}
+              style={{ padding: '6.5px 12px', borderRadius: '7px', border: '1px solid #cbd5e1', fontSize: '12.5px', outline: 'none', background: '#ffffff', color: '#0f172a', fontWeight: '600', cursor: 'pointer' }}
             >
               <option value="0">All Scores (0%+)</option>
               <option value="80">High Match (80%+)</option>
               <option value="60">Medium Match (60%+)</option>
             </select>
           </div>
+
+        </div>
+
+        <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#475569', padding: '6px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+          Applications: <span style={{ color: '#2563eb' }}>{filteredApplicants.length}</span> / {safeApplicants.length}
         </div>
       </div>
 
@@ -204,8 +219,9 @@ export default function ApplicantsView({
                       </select>
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <button className="btn btn-sm btn-primary" onClick={() => handleSelect(cand.candidateId || cand.candidate_id || cand.id)} style={{ padding: '6px 12px', fontSize: '12px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}>
-                        View AI Profile
+                      <button className="btn btn-sm btn-primary" onClick={() => handleSelect(cand.candidateId || cand.candidate_id || cand.id)} style={{ padding: '6px 12px', fontSize: '12px', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Eye size={13} />
+                        <span>Profile</span>
                       </button>
                     </td>
                   </tr>

@@ -14,12 +14,14 @@ import {
   ExternalLink,
   Code2,
   Filter,
-  Sparkles
+  Sparkles,
+  Eye
 } from 'lucide-react';
 
 export default function AllCandidatesView({
   realCandidates = [],
   loading = false,
+  globalSearch = '',
   onRefresh,
   onSelectCandidate
 }) {
@@ -27,6 +29,8 @@ export default function AllCandidatesView({
   const [fieldFilter, setFieldFilter] = useState('all');
 
   const safeCandidates = Array.isArray(realCandidates) ? realCandidates : [];
+
+  const activeQuery = (globalSearch || searchTerm).toLowerCase().trim();
 
   // Filter candidates based on search term & field filter
   const filteredCandidates = safeCandidates.filter(c => {
@@ -36,8 +40,7 @@ export default function AllCandidatesView({
     const location = (c.location || '').toLowerCase();
     const skillsStr = Array.isArray(c.skills) ? c.skills.join(' ').toLowerCase() : '';
     
-    const query = searchTerm.toLowerCase().trim();
-    const matchesSearch = !query || name.includes(query) || email.includes(query) || title.includes(query) || location.includes(query) || skillsStr.includes(query);
+    const matchesSearch = !activeQuery || name.includes(activeQuery) || email.includes(activeQuery) || title.includes(activeQuery) || location.includes(activeQuery) || skillsStr.includes(activeQuery);
 
     const matchesField = fieldFilter === 'all' || 
       (c.resume_field && c.resume_field.toLowerCase().includes(fieldFilter.toLowerCase())) ||
@@ -48,78 +51,23 @@ export default function AllCandidatesView({
 
   return (
     <section className="view-section active">
-      {/* Top Header Bar */}
-      <div className="view-header-bar flex-between" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserCheck style={{ color: '#2563eb' }} size={22} />
-            Registered Candidates Directory (Real Database)
-          </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
-            Real candidate profiles & parsed resumes fetched directly from Supabase PostgreSQL database.
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            style={{
-              padding: '8px 16px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              color: '#334155',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <RefreshCw size={15} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-            {loading ? 'Fetching DB...' : 'Refresh Real DB'}
-          </button>
-        </div>
-      </div>
-
-      {/* Search & Filter Controls */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ position: 'relative', flex: '1', minWidth: '260px' }}>
-          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input
-            type="text"
-            placeholder="Search candidates by name, email, skills, or title..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 14px 10px 38px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              fontSize: '13.5px',
-              outline: 'none',
-              background: '#ffffff',
-              color: '#0f172a'
-            }}
-          />
-        </div>
-
+      {/* Domain Filter & Counter Toolbar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Filter size={15} style={{ color: '#64748b' }} />
+          <span style={{ fontSize: '12.5px', fontWeight: '600', color: '#475569' }}>Domain Filter:</span>
           <select
             value={fieldFilter}
             onChange={(e) => setFieldFilter(e.target.value)}
             style={{
-              padding: '9.5px 14px',
-              borderRadius: '10px',
+              padding: '7px 14px',
+              borderRadius: '8px',
               border: '1px solid #cbd5e1',
-              fontSize: '13px',
+              fontSize: '12.5px',
               outline: 'none',
               background: '#ffffff',
               color: '#334155',
-              fontWeight: '500',
+              fontWeight: '600',
               cursor: 'pointer'
             }}
           >
@@ -131,8 +79,8 @@ export default function AllCandidatesView({
           </select>
         </div>
 
-        <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', padding: '6px 12px', background: '#f1f5f9', borderRadius: '8px' }}>
-          Total Candidates: <span style={{ color: '#2563eb' }}>{filteredCandidates.length}</span> / {safeCandidates.length}
+        <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#475569', padding: '6px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+          Candidates Found: <span style={{ color: '#2563eb' }}>{filteredCandidates.length}</span> / {safeCandidates.length}
         </div>
       </div>
 
@@ -174,83 +122,118 @@ export default function AllCandidatesView({
                   padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  justify: 'space-between',
-                  gap: '16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                  justifyContent: 'space-between',
+                  height: '100%',
+                  minHeight: '380px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                   transition: 'transform 0.2s ease, box-shadow 0.2s ease'
                 }}
               >
-                <div>
-                  {/* Card Header: Avatar & Domain Badge */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: '#2563eb', color: '#ffffff', fontSize: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', shrink: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  
+                  {/* 1. Header: Avatar, Name, Title & Domain Badge (Fixed Alignment) */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '14px', minHeight: '48px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        width: '44px',
+                        height: '44px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+                        color: '#ffffff',
+                        fontSize: '15px',
+                        fontWeight: '800',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+                      }}>
                         {initials}
                       </div>
-                      <div>
-                        <h3 style={{ fontSize: '15.5px', fontWeight: '700', color: '#0f172a', margin: 0 }}>{name}</h3>
-                        <div style={{ fontSize: '12.5px', fontWeight: '600', color: '#2563eb', marginTop: '2px' }}>{title}</div>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={name}>
+                          {name}
+                        </h3>
+                        <div style={{ fontSize: '12px', fontWeight: '600', color: '#2563eb', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={title}>
+                          {title}
+                        </div>
                       </div>
                     </div>
 
-                    <span style={{ fontSize: '11px', fontWeight: '600', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', background: '#f8fafc', color: '#475569', padding: '3px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0, marginLeft: '8px' }}>
                       {c.resume_field || 'Technical'}
                     </span>
                   </div>
 
-                  {/* Contact Info Row */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Mail size={13} style={{ color: '#94a3b8' }} />
-                      <span style={{ color: '#334155' }}>{email}</span>
+                  {/* 2. Contact Info Box (Fixed Height & Uniform Layout) */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#64748b', marginBottom: '14px', background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #f1f5f9', minHeight: '84px', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Mail size={13.5} style={{ color: '#2563eb', flexShrink: 0 }} />
+                      <span style={{ color: '#1e293b', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={email}>{email}</span>
                     </div>
-                    {phone && phone !== 'No Phone' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Phone size={13} style={{ color: '#94a3b8' }} />
-                        <span>{phone}</span>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <MapPin size={13} style={{ color: '#94a3b8' }} />
-                      <span>{location}</span>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Phone size={13.5} style={{ color: phone && phone !== 'No Phone' ? '#2563eb' : '#94a3b8', flexShrink: 0 }} />
+                      <span style={{ color: phone && phone !== 'No Phone' ? '#475569' : '#94a3b8', fontSize: '11.5px' }}>
+                        {phone && phone !== 'No Phone' ? phone : 'Phone Not Provided'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MapPin size={13.5} style={{ color: '#64748b', flexShrink: 0 }} />
+                      <span style={{ color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={location}>{location}</span>
                     </div>
                   </div>
 
-                  {/* Skills Tags */}
-                  {skills.length > 0 && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', tracking: '0.05em', marginBottom: '6px' }}>Skills Stack</div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                        {skills.slice(0, 5).map((sk, idx) => (
-                          <span key={idx} style={{ fontSize: '11px', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #dbeafe', padding: '2px 8px', borderRadius: '6px', fontWeight: '500' }}>
+                  {/* 3. Skills Stack Chips (Fixed Height Slot for Perfect Alignment) */}
+                  <div style={{ marginBottom: '12px', minHeight: '68px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                      Skills Stack
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', maxHeight: '44px', overflow: 'hidden' }}>
+                      {skills.length > 0 ? (
+                        skills.slice(0, 5).map((sk, idx) => (
+                          <span key={idx} style={{ fontSize: '11px', background: '#f0f9ff', color: '#0284c7', border: '1px solid #bae6fd', padding: '2px 8px', borderRadius: '6px', fontWeight: '600' }}>
                             {sk}
                           </span>
-                        ))}
-                        {skills.length > 5 && (
-                          <span style={{ fontSize: '11px', color: '#64748b', padding: '2px 4px' }}>+{skills.length - 5} more</span>
-                        )}
-                      </div>
+                        ))
+                      ) : (
+                        <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>General Technical Profile</span>
+                      )}
+                      {skills.length > 5 && (
+                        <span style={{ fontSize: '10.5px', color: '#64748b', background: '#f1f5f9', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: '6px', fontWeight: '600' }}>
+                          +{skills.length - 5} more
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
 
-                  {/* AI Provider Notice */}
-                  {activeProvider && (
-                    <div style={{ fontSize: '11.5px', color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px' }}>
-                      <Sparkles size={12} />
-                      <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeProvider}</span>
-                    </div>
-                  )}
+                  {/* 4. AI Provider Notice Slot (Fixed Slot Height) */}
+                  <div style={{ minHeight: '26px', marginBottom: '12px' }}>
+                    {activeProvider ? (
+                      <div style={{ fontSize: '10.5px', color: '#047857', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '3px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Sparkles size={11} />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '600' }}>Active LLM: {activeProvider}</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '10.5px', color: '#64748b', background: '#f8fafc', border: '1px solid #f1f5f9', padding: '3px 8px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <UserCheck size={11} style={{ color: '#94a3b8' }} />
+                        <span style={{ fontWeight: '500' }}>Standard Candidate Profile</span>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
 
-                {/* Card Bottom Row: CV Status & View Profile Action */}
-                <div style={{ paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                {/* 5. Card Bottom Action Row (Strictly Anchored to Bottom) */}
+                <div style={{ paddingTop: '12px', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px' }}>
                     {hasCv ? (
-                      <span style={{ color: '#16a34a', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <FileText size={13} /> Real Resume Attached
+                      <span style={{ color: '#16a34a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '3px 8px', borderRadius: '6px' }}>
+                        <FileText size={12} /> Real Resume Attached
                       </span>
                     ) : (
-                      <span style={{ color: '#94a3b8' }}>Profile Only</span>
+                      <span style={{ color: '#64748b', fontSize: '11px', background: '#f8fafc', padding: '3px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>Profile Only</span>
                     )}
                   </div>
 
@@ -259,19 +242,20 @@ export default function AllCandidatesView({
                     style={{
                       padding: '7px 14px',
                       borderRadius: '8px',
-                      background: '#2563eb',
+                      background: '#0f172a',
                       color: '#ffffff',
-                      fontSize: '12.5px',
-                      fontWeight: '600',
+                      fontSize: '12px',
+                      fontWeight: '700',
                       border: 'none',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '5px'
+                      gap: '5px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
                     }}
                   >
-                    <span>View Profile</span>
-                    <ExternalLink size={13} />
+                    <Eye size={13} />
+                    <span>Profile</span>
                   </button>
                 </div>
 

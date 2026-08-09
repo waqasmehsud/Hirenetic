@@ -71,7 +71,7 @@ export default function CandidateLoginPage() {
       }
 
       if (data?.session) {
-        router.push('/candidate-panel')
+        router.replace('/candidate-panel')
       }
     } catch (err) {
       console.error('Login exception:', err)

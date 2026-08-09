@@ -136,7 +136,7 @@ export default function CandidateCrossMatchPage() {
 
         {/* Back Link */}
         <div style={{ marginBottom: '16px' }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
+          <Link replace href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', textDecoration: 'none', fontWeight: '500' }}>
             <ArrowLeft size={14} /> Back to Portal
           </Link>
         </div>

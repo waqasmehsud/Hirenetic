@@ -1,8 +1,8 @@
 # 🚀 Hirenetic — Enterprise AI-Powered Recruitment & HR Automation Platform
 
-**Hirenetic** is a next-generation, full-stack enterprise recruitment and talent matching platform built with **Next.js 14 (App Router)**, **PostgreSQL (Supabase)**, and **Multi-LLM Artificial Intelligence Engines (Groq Llama 3.3 70B, Google Gemini 1.5 Flash, OpenAI GPT-4o-mini)**.
+**Hirenetic** is a next-generation, full-stack enterprise recruitment, talent matching, and candidate verification platform built with **Next.js 14 (App Router)**, **PostgreSQL (Supabase)**, and **Multi-LLM Artificial Intelligence Engines (Groq Llama 3.3 70B, Google Gemini 1.5 Flash, OpenAI GPT-4o-mini)**.
 
-It seamlessly connects Candidates, HR Recruiters, and Platform Administrators in a unified, real-time ecosystem with multi-dimensional candidate matching, dual-mode job application routing, real-time quota tracking, and automated workflow execution.
+It seamlessly connects Candidates, HR Recruiters, and Platform Administrators in a unified, real-time ecosystem featuring multi-dimensional candidate matching, dynamic ATS scoring, real-time recruiter verification control, embeddable candidate widgets, and public developer APIs.
 
 ---
 
@@ -20,27 +20,51 @@ It seamlessly connects Candidates, HR Recruiters, and Platform Administrators in
   - **Internal HR Posted Jobs**: Instant 1-click In-Platform Application Modal submitting candidate CVs directly to recruiters (`status: Applied`).
 - **Interactive Match Analytics**: Score breakdown pills (`Skills %`, `Domain %`, `Experience %`, `Projects %`) alongside AI-generated Pro Candidate Tips.
 
+---
+
 ### 2. 💼 HR Recruiter Panel (`/hr-panel`)
 - **Job Posting & Position Management**:
   - Create new job openings with explicit initial status (`🟢 Open` vs `🔴 Closed`).
   - Live real-time status toggle (`Close` / `Reopen`) with automatic Supabase database synchronization (`crwl_jobsData`).
 - **Master Candidate 360° Hub Widget (`CandidateDetailModal.js`)**:
   - **4-Tab Compact Hub**: `360° Profile` | `AI Verification & GitHub` | `Recruiter AI Assistant` | `HR Notes & Tags`.
-  - **Live GitHub Verification**: Deep dive into GitHub public repos, star count, top languages, account age, and evidence comparison table.
-  - **Recruiter AI Chat Assistant**: Interactive Groq LLM Assistant (`llama-3.3-70b-versatile`) with dynamic candidate context parsing.
-- **Talent Pool Management**: Real-time applicant filtering, saved candidate talent pool with 1-click **Remove from Talent Pool** action.
+  - **Dynamic ATS Resume Score Engine**: Calculates live scores ($\text{Skills}(30) + \text{Exp}(30) + \text{Projects}(20) + \text{Cert}(10) + \text{Completeness}(10)$).
+  - **Strict CV Work History Tenure**: Computes experience strictly from CV work history ($\sum (\text{End Year} - \text{Start Year})$), returning `0.0 Years` if no work history exists.
+  - **Composite Overall Rating**: Live composite rating on a 5.0 scale based on Match, Resume, Trust, and Experience scores.
+  - **Hiring Action Status Sync (Shortlist, Schedule Interview, Reject, Hire)**: Updates both `candidates_profiles` and `job_applications` tables in Supabase in real time with color-coded status badges.
+  - **Document Overflow Fix**: Ellipsis truncation for long document filenames with hover tooltips.
+  - **Embed Code Generator**: 1-click modal snippet generator to copy embed script for any external website.
 
-### 3. 🛡️ Admin Management Panel (`/admin-panel`)
-- **Admin Security Passcode Access Lock**:
-  - Protected with a sleek Admin Security Passcode Lock screen (`Default Passcode: admin123`).
-  - Passcode management in Admin Settings to easily update and store custom passcodes.
-- **Live Supabase Entity Analytics**: Real-time query counters for candidates (`candidates_profiles`), recruiters (`employers_profiles`), active job postings (`crwl_jobsData`), tracked applications (`job_applications`), and automation scripts.
+---
 
-### 4. 🔑 API Management Panel (`/apimanagement-panel`)
+### 3. 🌐 Embeddable Candidate Widget & Exposed API (`/exposed-api` & `/candidate-widget`)
+- **Exposed Candidate API (`/exposed-api?public_widget=true`)**: Exposes complete candidate profile, metrics, verifications, work experience, projects, education, and application history JSON payload.
+- **Universal Embed Script (`public/widget.js`)**: Embed candidate profiles on **ANY external website** with 2 lines of HTML:
+  ```html
+  <script src="https://your-domain.com/widget.js"></script>
+  <button data-hirenetic-candidate="waqasmehsud77@gmail.com">
+    Display Candidate Profile
+  </button>
+  ```
+- **Embeddable Iframe View (`/candidate-widget/embed`)**: Glassmorphism overlay modal rendering the exact candidate detail widget inside any third-party host site.
+
+---
+
+### 4. 🛡️ Admin Management Panel (`/admin-panel`)
+- **Recruiter Block / Unblock Control**: Instant status updates (`Blocked` vs `Verified`) persisted in Supabase `employers_profiles` table via `/admin-panel/api/update-hr-status`.
+- **Live Jobs Aggregation**: Merges candidate-applied jobs and crawled jobs directly from Supabase DB.
+- **System Report Export**: Export platform system data as a JSON report.
+- **Admin Security Lock Screen**: Protected with a security passcode lock screen (`Default Passcode: admin123`).
+
+---
+
+### 5. 🔑 API Management Panel (`/apimanagement-panel`)
 - **Real-Time LLM Quota Tracking**: Automatically tracks token calls and inference requests (`used_quota` / `daily_quota`) whenever Groq, OpenAI, or Gemini APIs run candidate recommendations or CV parsing.
-- **API Key Lifecycle Control**: Add, test, edit, and monitor API credentials with real-time database updates.
+- **Exposed API Documentation Banner**: Instant links to test exposed JSON endpoints and open standalone candidate widget views.
 
-### 5. 📜 Script Inventory & Automation Workflow (`/scripts-inventory`)
+---
+
+### 6. 📜 Script Inventory & Automation Workflow (`/scripts-inventory`)
 - **Python Automation Engine**: Code editor with local Python execution sandbox and dynamic pip dependency resolver.
 - **GitHub Actions Runner**: Remote workflow execution via GitHub API webhooks.
 
@@ -53,6 +77,7 @@ It seamlessly connects Candidates, HR Recruiters, and Platform Administrators in
 | **Framework** | Next.js 14 (App Router), React 18, JavaScript (ES6+) |
 | **Styling & UI** | Vanilla CSS Design System, Lucide React Icons, Responsive Flex/Grid |
 | **Database & Auth** | Supabase PostgreSQL, Supabase Auth, Row Level Security (RLS) |
+| **APIs & Widgets** | Exposed REST API, Universal JavaScript Widget Embed Engine |
 | **AI / LLM Engines** | Groq Llama 3.3 70B, Google Gemini 1.5 Flash, OpenAI GPT-4o-mini |
 | **Automation** | Python 3, Node.js `child_process`, GitHub Actions REST API |
 | **Deployment** | Vercel Serverless Functions, Docker & Docker Compose |
@@ -75,6 +100,10 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_SUPABASE_URL=https://fdducqoklmqvomsszyqy.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Exposed API Key
+EXPOSED_API_KEY=your_exposed_api_key
+NEXT_PUBLIC_EXPOSED_API_KEY=your_exposed_api_key
 
 # Multi-LLM API Credentials (Optional Backup Keys)
 GROQ_API_KEY=your_groq_api_key
@@ -100,6 +129,8 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 - **Admin Panel**: `http://localhost:3000/admin-panel`
 - **API Management**: `http://localhost:3000/apimanagement-panel`
 - **Script Inventory**: `http://localhost:3000/scripts-inventory`
+- **Exposed Candidate API**: `http://localhost:3000/exposed-api?public_widget=true`
+- **Standalone Candidate Widget**: `http://localhost:3000/candidate-widget`
 
 ---
 
@@ -108,7 +139,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 ### Deploying to Vercel (1-Click)
 1. Push code to your GitHub repository.
 2. Import project on [Vercel.com](https://vercel.com).
-3. Set Environment Variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+3. Set Environment Variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `EXPOSED_API_KEY`).
 4. Click **Deploy**!
 
 ### Deploying with Docker
@@ -123,30 +154,30 @@ Access the containerized application at `http://localhost:3000`.
 
 ```text
 Hirenetic/
-├── Mdfiles/                   # System documentation & architectural guides
 ├── schema/                    # Database SQL schemas & migrations
-├── public/                    # Static assets & public images
+├── public/                    # Static assets & public widget.js script
 ├── src/
 │   ├── app/
-│   │   ├── admin-panel/       # Admin console, stats API, lock screen & settings
+│   │   ├── admin-panel/       # Admin console, stats API, lock screen & recruiter status API
 │   │   ├── apimanagement-panel/# Real-time API key quota tracker & manager
 │   │   ├── candidate-panel/   # Candidate Portal, CV parser & AI recommendation API
+│   │   ├── candidate-widget/  # Standalone & iframe embeddable candidate widget
 │   │   ├── cross-matching/    # Multi-dimensional matching verification
-│   │   ├── exposed-api/       # Public developer API endpoints
+│   │   ├── exposed-api/       # Public developer API & candidate widget JSON endpoint
 │   │   ├── hr-panel/          # HR Panel, Master Candidate 360 Hub & Applicants view
 │   │   ├── scripts-inventory/ # Script editor & Python runner
 │   │   ├── globals.css        # Core global styles
 │   │   ├── layout.js          # Root layout
-│   │   └── page.js            # Home page redirect
+│   │   └── page.js            # Home landing page
 ├── Dockerfile                 # Next.js production build container
 ├── docker-compose.yml         # Container orchestration configuration
 ├── package.json               # Dependencies & scripts
-└── README.md                  # Project documentation
+└── README.md                  # Comprehensive project documentation
 ```
 
 ---
 
 ## 📝 License & Version
-- **Version**: `2.6.0`
+- **Version**: `2.7.0`
 - **License**: MIT
-- **Built for**: Advanced Agentic Recruitment & Enterprise AI Talent Analytics.
+- **Built for**: Advanced Agentic Recruitment, Enterprise AI Talent Analytics, & Embeddable Candidate Verification.
