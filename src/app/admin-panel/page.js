@@ -241,6 +241,14 @@ export default function AdminPanelPage() {
     );
   }
 
+  const stats = {
+    totalCandidates: candidates.length,
+    activeJobs: jobs.filter(j => j.status === 'Active').length || jobs.length,
+    hrAccounts: hrList.length,
+    totalApplications: applicationsList.length,
+    securityScans: candidates.filter(c => c.securityScan === 'Passed' || c.cv_file_path).length || candidates.length
+  };
+
   return (
     <div className="admin-container">
       {/* Sidebar Navigation */}
