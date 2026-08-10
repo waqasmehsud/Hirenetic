@@ -8,7 +8,15 @@ const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, su
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const candidateId = searchParams.get('state');
+  const stateParam = searchParams.get('state') || '';
+  
+  // CSRF Validation
+  const [candidateId, nonce] = stateParam.split(':::');
+  const cookieNonce = request.cookies.get('oauth_nonce')?.value;
+  
+  if (!nonce || nonce !== cookieNonce) {
+    return NextResponse.redirect(new URL('/candidate-panel?error=csrf_validation_failed', request.url));
+  }
 
   if (!code) {
     return NextResponse.redirect(new URL('/candidate-panel?error=github_code_missing', request.url));

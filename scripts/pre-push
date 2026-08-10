@@ -1,0 +1,27 @@
+#!/bin/sh
+# Hirenetic Pre-Push Security Hook
+# Runs local security checks before allowing git push
+
+echo ""
+echo "╔══════════════════════════════════════════════════╗"
+echo "║    🛡️  Pre-Push Security Gate  🛡️                 ║"
+echo "╚══════════════════════════════════════════════════╝"
+echo ""
+
+# Run the security scanner
+node scripts/security-check.js
+SECURITY_EXIT=$?
+
+if [ $SECURITY_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ PUSH BLOCKED: Security checks failed."
+  echo "   Fix the issues above, then try again."
+  echo "   To skip (NOT recommended): git push --no-verify"
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "✅ Security checks passed. Push continuing..."
+echo ""
+exit 0

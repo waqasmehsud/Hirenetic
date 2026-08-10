@@ -55,6 +55,10 @@ export function AddApiModal({ isOpen, onClose, onSave }) {
       autoModel = '';
       autoCategory = 'Scraper';
       if (!autoName || autoName.includes('Key')) autoName = 'Web Scraper API';
+    } else if (selectedProvider === 'Zhipu AI (GLM)' || selectedProvider === 'Puter.js (Free Zhipu GLM)') {
+      autoModel = 'glm-4';
+      autoCategory = 'LLM';
+      if (!autoName || autoName.includes('Key')) autoName = 'Puter GLM Key';
     }
 
     setFormData({
@@ -112,8 +116,9 @@ export function AddApiModal({ isOpen, onClose, onSave }) {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!formData.name.trim() || !formData.provider.trim() || !formData.api_key.trim()) {
-      setErrorMsg('Name, Provider, and API Key are required fields.');
+    const isKeyless = formData.provider.includes('Zhipu') || formData.provider.includes('Puter');
+    if (!formData.name.trim() || !formData.provider.trim() || (!isKeyless && !formData.api_key.trim())) {
+      setErrorMsg(isKeyless ? 'Name and Provider are required fields.' : 'Name, Provider, and API Key are required fields.');
       return;
     }
 
@@ -207,10 +212,10 @@ export function AddApiModal({ isOpen, onClose, onSave }) {
 
           {/* API Key Input */}
           <div style={{ marginBottom: '14px' }}>
-            <label style={labelStyle}>API Secret Key *</label>
+            <label style={labelStyle}>API Secret Key {(!formData.provider.includes('Zhipu') && !formData.provider.includes('Puter')) && '*'}</label>
             <div style={{ position: 'relative' }}>
               <input
-                required
+                required={!formData.provider.includes('Zhipu') && !formData.provider.includes('Puter')}
                 type={showKey ? 'text' : 'password'}
                 placeholder="Paste API key (e.g. gsk_..., AIza..., sk-...)"
                 value={formData.api_key}
@@ -247,6 +252,7 @@ export function AddApiModal({ isOpen, onClose, onSave }) {
                 <option value="Groq">⚡ Groq (Fast Llama 3)</option>
                 <option value="Google (Gemini)">🤖 Google (Gemini AI)</option>
                 <option value="OpenAI">🧠 OpenAI (GPT-3.5/GPT-4)</option>
+                <option value="Puter.js (Free Zhipu GLM)">🇨🇳 Puter.js (Free Zhipu GLM)</option>
                 <option value="OpenRouter">🔀 OpenRouter (Universal AI)</option>
                 <option value="RapidAPI (LinkedIn / Job API)">💼 RapidAPI (LinkedIn / Jobs)</option>
                 <option value="ScraperAPI">🕷️ ScraperAPI (Web Crawler)</option>

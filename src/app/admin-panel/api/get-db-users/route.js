@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/authGuard';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { user, error } = await requireAdmin(request)
+    if (error) return NextResponse.json({ error }, { status: 403 })
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

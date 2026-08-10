@@ -55,7 +55,7 @@ export default function SettingsTab({ onNotify }) {
     setPasscodeError('');
     setPasscodeSuccess('');
 
-    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('admin_panel_passcode')) || 'admin123';
+    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('admin_panel_passcode')) || process.env.NEXT_PUBLIC_ADMIN_PASSCODE || '';
 
     if (currentPasscode.trim() !== storedPasscode.trim()) {
       setPasscodeError('Current passcode is incorrect.');
@@ -110,7 +110,7 @@ export default function SettingsTab({ onNotify }) {
           </div>
 
           <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
-            Update the Security Passcode required to unlock the Admin Control Panel (`/admin-panel`). Default Passcode: <code style={{ background: '#ffffff', padding: '2px 6px', borderRadius: '4px', border: '1px solid #cbd5e1', color: '#2563eb', fontWeight: 600 }}>admin123</code>
+            Update the Security Passcode required to unlock the Admin Control Panel (`/admin-panel`).
           </p>
 
           {passcodeSuccess && (

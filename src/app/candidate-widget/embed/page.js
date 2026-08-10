@@ -4,12 +4,11 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CandidateDetailModal from '../../hr-panel/components/CandidateDetailModal';
 
-export const dynamic = 'force-dynamic';
-
 function EmbedCandidateWidgetContent() {
   const searchParams = useSearchParams();
   const candidateId = searchParams.get('candidate_id') || searchParams.get('id');
   const email = searchParams.get('email');
+  const apiKey = searchParams.get('api_key');
 
   const [candidateData, setCandidateData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,8 +22,14 @@ function EmbedCandidateWidgetContent() {
         let apiUrl = '/exposed-api?public_widget=true';
         if (candidateId) apiUrl += `&candidate_id=${encodeURIComponent(candidateId)}`;
         if (email) apiUrl += `&email=${encodeURIComponent(email)}`;
+        if (apiKey) apiUrl += `&api_key=${encodeURIComponent(apiKey)}`;
 
-        const res = await fetch(apiUrl);
+        const headers = {};
+        if (apiKey) {
+          headers['x-api-key'] = apiKey;
+        }
+
+        const res = await fetch(apiUrl, { headers });
         const data = await res.json();
 
         if (data.success && data.candidateWidget) {
@@ -41,7 +46,7 @@ function EmbedCandidateWidgetContent() {
     }
 
     fetchExposedWidgetPayload();
-  }, [candidateId, email]);
+  }, [candidateId, email, apiKey]);
 
   return (
     <div style={{ width: '100%', height: '100vh', background: '#ffffff', overflow: 'auto', position: 'relative' }}>

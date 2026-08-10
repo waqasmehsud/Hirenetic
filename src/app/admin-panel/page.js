@@ -51,7 +51,7 @@ export default function AdminPanelPage() {
 
   const handleUnlockAdmin = (e) => {
     e?.preventDefault();
-    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('admin_panel_passcode')) || 'admin123';
+    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('admin_panel_passcode')) || process.env.NEXT_PUBLIC_ADMIN_PASSCODE || '';
     if (passcodeInput.trim() === storedPasscode.trim()) {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('admin_panel_unlocked', 'true');
@@ -234,7 +234,7 @@ export default function AdminPanelPage() {
           </form>
 
           <div style={{ marginTop: '20px', padding: '10px', borderRadius: '8px', background: '#f1f5f9', fontSize: '11.5px', color: '#475569', fontWeight: '600' }}>
-            🔑 Default Passcode: <code style={{ color: '#2563eb', background: '#ffffff', padding: '2px 6px', borderRadius: '4px' }}>admin123</code>
+            🔑 Enter your secure admin passcode to continue.
           </div>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default function AdminPanelPage() {
       {/* Sidebar Navigation */}
       <aside className="admin-sidebar">
         <div className="admin-logo">
-          <div className="admin-logo-icon"><Sparkles size={18} /></div>
+          <img src="/logo.svg" alt="Hirenetic Logo" style={{ width: '24px', height: '24px', borderRadius: '6px' }} />
           <div className="admin-logo-text">Hirenetic Admin</div>
         </div>
 

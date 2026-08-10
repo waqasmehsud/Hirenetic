@@ -3,12 +3,15 @@ import { scrapeJobWebpage } from '@/lib/jobScraper';
 
 export async function POST(req) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fdducqoklmqvomsszyqy.supabase.co';
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    if (!supabaseUrl || !serviceKey) {
+      return Response.json({ error: 'Supabase credentials not configured' }, { status: 500 });
+    }
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     const body = await req.json().catch(() => ({}));
-    const { userId, candidateProfile: inputProfile, limit = 15 } = body;
+    const { userId, candidateProfile: inputProfile, limit = 15, jobId = null, preferredLlm = 'auto' } = body;
 
     // 1. Fetch Candidate Profile from DB if userId provided, otherwise use inputProfile
     let candidateProfile = inputProfile || null;
@@ -43,11 +46,17 @@ export async function POST(req) {
     // 2. Fetch Active Jobs from crwl_jobsData
     let activeJobs = [];
     try {
-      const { data, error: jobsErr } = await supabaseAdmin
+      let query = supabaseAdmin
         .from('crwl_jobsData')
-        .select('*')
-        .order('id', { ascending: false })
-        .range(0, 4999);
+        .select('*');
+        
+      if (jobId) {
+        query = query.eq('id', jobId);
+      } else {
+        query = query.order('id', { ascending: false }).range(0, 4999);
+      }
+
+      const { data, error: jobsErr } = await query;
 
       if (!jobsErr && Array.isArray(data)) {
         activeJobs = data;
@@ -58,22 +67,52 @@ export async function POST(req) {
       return Response.json({ error: 'No active job postings found' }, { status: 404 });
     }
 
-    // Determine Groq API credentials
-    let groqApiKey = process.env.GROQ_API_KEY;
-    if (!groqApiKey) {
-      try {
-        const { data: dbKeys } = await supabaseAdmin
-          .from('api_credentials')
-          .select('*')
-          .eq('status', 'Active');
-        if (Array.isArray(dbKeys)) {
-          const groqKeyObj = dbKeys.find(k => (k.provider?.toLowerCase().includes('groq') || k.api_key?.startsWith('gsk_')));
-          if (groqKeyObj?.api_key) {
-            groqApiKey = groqKeyObj.api_key;
+    // Determine Active LLM API credentials (GLM, Groq, etc)
+    let llmApiKey = process.env.GROQ_API_KEY;
+    let llmBaseUrl = 'https://api.groq.com/openai/v1';
+    let llmModel = 'llama-3.3-70b-versatile';
+
+    let activeProviderName = 'Groq';
+
+    try {
+      const { data: dbKeys } = await supabaseAdmin
+        .from('api_credentials')
+        .select('*')
+        .eq('status', 'Active');
+      if (Array.isArray(dbKeys) && dbKeys.length > 0) {
+        // If user preferred an LLM, find it first
+        let activeKey = null;
+        if (preferredLlm !== 'auto') {
+          activeKey = dbKeys.find(k => k.provider?.toLowerCase().includes(preferredLlm.toLowerCase()));
+        }
+
+        // Find GLM first if they explicitly want GLM, otherwise take first active
+        if (!activeKey) {
+          activeKey = dbKeys.find(k => k.provider?.toLowerCase().includes('glm') || k.provider?.toLowerCase().includes('zhipu'));
+        }
+        if (!activeKey) activeKey = dbKeys[0];
+        
+        if (activeKey?.api_key) {
+          llmApiKey = activeKey.api_key;
+          const prov = activeKey.provider?.toLowerCase() || '';
+          activeProviderName = activeKey.name || activeKey.provider || 'AI Provider';
+          
+          if (prov.includes('zhipu') || prov.includes('glm') || preferredLlm === 'zhipu') {
+            llmBaseUrl = activeKey.base_url || 'https://open.bigmodel.cn/api/paas/v4';
+            llmModel = activeKey.model || 'glm-4';
+          } else if (prov.includes('openai')) {
+            llmBaseUrl = activeKey.base_url || 'https://api.openai.com/v1';
+            llmModel = activeKey.model || 'gpt-4o-mini';
+          } else if (prov.includes('openrouter')) {
+            llmBaseUrl = activeKey.base_url || 'https://openrouter.ai/api/v1';
+            llmModel = activeKey.model || 'openai/gpt-3.5-turbo';
+          } else {
+            llmBaseUrl = activeKey.base_url || 'https://api.groq.com/openai/v1';
+            llmModel = activeKey.model || 'llama-3.1-8b-instant';
           }
         }
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
 
     // Parse candidate skills & projects safely from resume/profile
     const candidateSkillsStr = Array.isArray(candidateProfile.skills) ? candidateProfile.skills.join(', ') : (candidateProfile.skills || 'Python, SQL');
@@ -250,36 +289,35 @@ Return ONLY a valid JSON object matching this exact schema:
 }`;
 
       let matchAnalysis = null;
-
-      // Step D: Call Groq API with Retry Logic
-      if (groqApiKey) {
+      // Step D: Call LLM API (Groq/GLM/OpenAI) with Retry Logic
+      if (llmApiKey) {
         let retries = 2;
         while (retries >= 0 && !matchAnalysis) {
           try {
-            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const llmRes = await fetch(`${llmBaseUrl}/chat/completions`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${groqApiKey}`
+                'Authorization': `Bearer ${llmApiKey}`
               },
               body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
+                model: llmModel,
                 messages: [{ role: 'user', content: singleJobPrompt }],
-                response_format: { type: 'json_object' },
+                response_format: llmModel.includes('glm') ? undefined : { type: 'json_object' },
                 temperature: 0.15
               })
             });
 
-            if (groqRes.status === 429) {
-              console.warn(`[Groq Rate Limit 429] Retrying in 1s for job #${job.id}...`);
+            if (llmRes.status === 429) {
+              console.warn(`[Rate Limit 429] Retrying in 1s for job #${job.id}...`);
               await new Promise(r => setTimeout(r, 1000));
               retries--;
               continue;
             }
 
-            if (groqRes.ok) {
-              const groqData = await groqRes.json();
-              const contentText = groqData?.choices?.[0]?.message?.content;
+            if (llmRes.ok) {
+              const llmData = await llmRes.json();
+              const contentText = llmData?.choices?.[0]?.message?.content;
               if (contentText) {
                 const parsed = JSON.parse(contentText.replace(/```json/gi, '').replace(/```/g, '').trim());
                 if (parsed && typeof parsed.match_score === 'number' && parsed.recommendation) {
@@ -287,8 +325,8 @@ Return ONLY a valid JSON object matching this exact schema:
                 }
               }
             }
-          } catch (groqErr) {
-            console.warn(`[Groq API Exception] Job #${job.id}:`, groqErr.message);
+          } catch (llmErr) {
+            console.warn(`[LLM API Exception] Job #${job.id}:`, llmErr.message);
           }
           retries--;
         }
@@ -457,6 +495,7 @@ Return ONLY a valid JSON object matching this exact schema:
 
     return Response.json({
       success: true,
+      llmProvider: `Active LLM: ${activeProviderName} (${llmModel})`,
       candidateProfile: {
         id: candidateProfile.id,
         name: candidateProfile.full_name || candidateProfile.name,

@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '@/lib/authGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req) {
   try {
+    const { user, error: authError } = await requireAdmin(req)
+    if (authError) return NextResponse.json({ error: authError }, { status: 403 })
     const { hrId, status } = await req.json();
 
     if (!hrId || !status) {
@@ -12,9 +15,9 @@ export async function POST(req) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl) {
+    if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ error: 'Missing Supabase URL' }, { status: 500 });
     }
 

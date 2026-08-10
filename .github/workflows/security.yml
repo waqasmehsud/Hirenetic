@@ -1,0 +1,274 @@
+name: "🔒 Comprehensive Security Pipeline"
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"  # Weekly Monday 6 AM UTC
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # ══════════════════════════════════════════════════
+  # JOB 1: Dependency Vulnerability Audit
+  # ══════════════════════════════════════════════════
+  dependency-audit:
+    name: "📦 Dependency Audit"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Run npm audit
+        id: audit
+        run: |
+          echo "## 📦 Dependency Audit Results" >> $GITHUB_STEP_SUMMARY
+          npm audit --audit-level=high 2>&1 | tee audit-output.txt || true
+          
+          if grep -qi "critical" audit-output.txt; then
+            echo "::error::Critical vulnerabilities found in dependencies"
+            echo "❌ **Critical vulnerabilities found**" >> $GITHUB_STEP_SUMMARY
+            echo "has_critical=true" >> $GITHUB_OUTPUT
+          elif grep -qi "high" audit-output.txt; then
+            echo "::warning::High vulnerabilities found in dependencies"
+            echo "⚠️ **High vulnerabilities found**" >> $GITHUB_STEP_SUMMARY
+            echo "has_critical=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ **No high/critical vulnerabilities found**" >> $GITHUB_STEP_SUMMARY
+            echo "has_critical=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload Audit Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-report
+          path: audit-output.txt
+          retention-days: 30
+
+      - name: Fail on Critical
+        if: steps.audit.outputs.has_critical == 'true'
+        run: exit 1
+
+  # ══════════════════════════════════════════════════
+  # JOB 2: Secret Detection (Gitleaks)
+  # ══════════════════════════════════════════════════
+  secret-detection:
+    name: "🔑 Secret Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+
+  # ══════════════════════════════════════════════════
+  # JOB 3: SAST (Semgrep)
+  # ══════════════════════════════════════════════════
+  sast-semgrep:
+    name: "🔍 SAST - Semgrep"
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep SAST
+        run: |
+          semgrep scan \
+            --config=auto \
+            --config=p/javascript \
+            --config=p/nextjs \
+            --config=p/owasp-top-ten \
+            --config=p/security-audit \
+            --exclude=node_modules \
+            --exclude=.next \
+            --exclude=coverage \
+            --exclude=dist \
+            --exclude=build \
+            --exclude=package-lock.json \
+            --severity=WARNING \
+            --severity=ERROR \
+            --json \
+            --output=semgrep-results.json \
+            src/ || true
+
+      - name: Parse Semgrep Results
+        if: always()
+        run: |
+          echo "## 🔍 SAST Semgrep Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f semgrep-results.json ]; then
+            TOTAL=$(cat semgrep-results.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('results',[])))" 2>/dev/null || echo "0")
+            ERRORS=$(cat semgrep-results.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(len([r for r in d.get('results',[]) if r.get('extra',{}).get('severity','')=='ERROR']))" 2>/dev/null || echo "0")
+            echo "Total findings: **$TOTAL** (Errors: **$ERRORS**)" >> $GITHUB_STEP_SUMMARY
+            if [ "$ERRORS" -gt "0" ] 2>/dev/null; then
+              echo "::error::Semgrep found $ERRORS ERROR-severity findings"
+              exit 1
+            fi
+          else
+            echo "✅ No findings" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Semgrep Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sast-report
+          path: semgrep-results.json
+          retention-days: 30
+
+  # ══════════════════════════════════════════════════
+  # JOB 4: CodeQL Analysis
+  # ══════════════════════════════════════════════════
+  codeql-analysis:
+    name: "🧬 CodeQL Analysis"
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  # ══════════════════════════════════════════════════
+  # JOB 5: Trivy Filesystem & Docker Scan
+  # ══════════════════════════════════════════════════
+  trivy-scan:
+    name: "🐳 Trivy Security Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trivy Filesystem Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          ignore-unfixed: true
+          format: "table"
+          output: "trivy-fs-results.txt"
+          severity: "HIGH,CRITICAL"
+
+      - name: Trivy Dockerfile Scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "config"
+          scan-ref: "."
+          format: "table"
+          output: "trivy-config-results.txt"
+          severity: "HIGH,CRITICAL"
+        continue-on-error: true
+
+      - name: Parse Trivy Results
+        if: always()
+        run: |
+          echo "## 🐳 Trivy Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f trivy-fs-results.txt ]; then
+            if grep -qi "CRITICAL" trivy-fs-results.txt; then
+              echo "❌ **Critical filesystem vulnerabilities found**" >> $GITHUB_STEP_SUMMARY
+              echo "::error::Trivy found CRITICAL filesystem vulnerabilities"
+            else
+              echo "✅ **No critical filesystem vulnerabilities**" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          if [ -f trivy-config-results.txt ]; then
+            if grep -qi "CRITICAL" trivy-config-results.txt; then
+              echo "⚠️ **Dockerfile misconfigurations found**" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **Dockerfile configuration looks good**" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Upload Trivy Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-security-reports
+          path: |
+            trivy-fs-results.txt
+            trivy-config-results.txt
+          retention-days: 30
+
+  # ══════════════════════════════════════════════════
+  # JOB 6: Security Summary Gate
+  # ══════════════════════════════════════════════════
+  security-gate:
+    name: "🏁 Security Gate"
+    runs-on: ubuntu-latest
+    needs: [dependency-audit, secret-detection, sast-semgrep, codeql-analysis, trivy-scan]
+    if: always()
+    steps:
+      - name: Evaluate Security Results
+        run: |
+          echo "## 🏁 Security Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          FAILED=false
+
+          check_job() {
+            local job_name=$1
+            local job_result=$2
+            if [ "$job_result" = "failure" ]; then
+              echo "❌ **$job_name**: FAILED" >> $GITHUB_STEP_SUMMARY
+              FAILED=true
+            elif [ "$job_result" = "cancelled" ]; then
+              echo "⏭️ **$job_name**: Cancelled" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **$job_name**: Passed" >> $GITHUB_STEP_SUMMARY
+            fi
+          }
+
+          check_job "Dependency Audit" "${{ needs.dependency-audit.result }}"
+          check_job "Secret Detection" "${{ needs.secret-detection.result }}"
+          check_job "SAST (Semgrep)" "${{ needs.sast-semgrep.result }}"
+          check_job "CodeQL Analysis" "${{ needs.codeql-analysis.result }}"
+          check_job "Trivy Scan" "${{ needs.trivy-scan.result }}"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$FAILED" = "true" ]; then
+            echo "::error::One or more security checks failed"
+            echo "❌ **Overall: SECURITY GATE FAILED**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ **Overall: SECURITY GATE PASSED**" >> $GITHUB_STEP_SUMMARY
+          fi

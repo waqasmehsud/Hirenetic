@@ -1,0 +1,25 @@
+rules:
+  - id: hardcoded-supabase-url
+    patterns:
+      - pattern: "https://...supabase.co"
+    message: "Hardcoded Supabase URL detected. Use environment variables instead."
+    severity: WARNING
+    languages: [javascript, typescript]
+
+  - id: missing-auth-check
+    patterns:
+      - pattern: |
+          export async function $METHOD($REQ) {
+            ...
+            const { data } = await $SUPA.from(...).$QUERY(...);
+            ...
+          }
+      - pattern-not: |
+          export async function $METHOD($REQ) {
+            ...
+            const $TOKEN = ...;
+            ...
+          }
+    message: "API route handler may be missing authentication check before database access."
+    severity: WARNING
+    languages: [javascript, typescript]

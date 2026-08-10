@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!url || !key) return null;
   return createClient(url, key);
 }
@@ -268,8 +268,14 @@ export async function POST(req) {
             return isLLMCategory && isActive && hasKey && quotaAvailable;
           });
 
-          // Sort keys by used_quota ascending (prefer key with most remaining quota)
-          candidateKeys.sort((a, b) => (Number(a.used_quota) || 0) - (Number(b.used_quota) || 0));
+          // Sort keys: prefer GLM, then used_quota ascending
+          candidateKeys.sort((a, b) => {
+            const aIsGlm = a.provider?.toLowerCase().includes('glm') || a.provider?.toLowerCase().includes('zhipu');
+            const bIsGlm = b.provider?.toLowerCase().includes('glm') || b.provider?.toLowerCase().includes('zhipu');
+            if (aIsGlm && !bIsGlm) return -1;
+            if (!aIsGlm && bIsGlm) return 1;
+            return (Number(a.used_quota) || 0) - (Number(b.used_quota) || 0);
+          });
           console.log(`[API Management] Found ${candidateKeys.length} available LLM candidate keys with quota remaining.`);
         }
       }

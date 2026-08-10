@@ -120,9 +120,7 @@ export default function HRSignupPage() {
 
         {/* Top: Branding */}
         <div className="relative z-10 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
-             <Code2 className="w-4 h-4" />
-          </div>
+          <img src="/logo.svg" alt="Hirenetic Logo" className="w-8 h-8 rounded-lg shadow-sm object-cover" />
           <span className="text-[17px] font-semibold text-slate-900 tracking-tight">
             Hirenetic Employer Portal
           </span>

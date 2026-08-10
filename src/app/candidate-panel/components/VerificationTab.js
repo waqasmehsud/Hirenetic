@@ -126,7 +126,15 @@ export default function VerificationTab({ candidateProfile, onRefreshProfile }) 
     setIsAuditingGithub(true);
     const clientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
     const redirectUri = typeof window !== 'undefined' ? encodeURIComponent(`${window.location.origin}/api/auth/github/callback`) : '';
-    const state = candidateProfile?.id || 'candidate_1';
+    
+    // CSRF Protection: Generate nonce and store in cookie
+    const nonce = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    if (typeof document !== 'undefined') {
+      document.cookie = `oauth_nonce=${nonce}; path=/; max-age=3600; samesite=lax`;
+    }
+    
+    const candidateId = candidateProfile?.id || 'candidate_1';
+    const state = `${candidateId}:::${nonce}`;
 
     if (clientId) {
       const githubOAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read:user,public_repo&state=${state}`;

@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient'
 import { BRAND_CONFIG } from '@/theme/branding.config'
 import { Sparkles, LayoutDashboard, Link2, Target, LogOut, Code2, Eye, FileText, X, Menu, ShieldCheck } from 'lucide-react'
 
-export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, candidateProfile, onLogout, onOpenWizard }) {
+export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, candidateProfile, dynamicLlmProvider, onLogout, onOpenWizard }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showResumeModal, setShowResumeModal] = useState(false)
@@ -14,7 +14,7 @@ export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, ca
   const displayName = candidateProfile?.full_name || userEmail?.split('@')[0] || 'Candidate'
   const displayTitle = candidateProfile?.title || 'Cybersecurity / Software Professional'
   const email = candidateProfile?.email || userEmail || ''
-  const activeLlm = candidateProfile?.active_llm_provider || ''
+  const activeLlm = dynamicLlmProvider || candidateProfile?.active_llm_provider || ''
   const resumeFilePath = candidateProfile?.cv_file_path || ''
   const resumeText = candidateProfile?.resume_text || ''
 
@@ -76,19 +76,11 @@ export default function CandidateTopbar({ activeTab, setActiveTab, userEmail, ca
           style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} 
           onClick={() => handleNavClick('dashboard')}
         >
-          <div style={{
-            width: '36px',
-            height: '36px',
-            background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-            color: '#ffffff',
-            borderRadius: '9px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(37,99,235,0.2)'
-          }}>
-            <Code2 size={20} />
-          </div>
+          <img 
+            src="/logo.svg" 
+            alt="Hirenetic Logo" 
+            style={{ width: '36px', height: '36px', borderRadius: '9px', objectFit: 'cover' }} 
+          />
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--brand-text-main)', letterSpacing: '-0.02em' }}>
               {BRAND_CONFIG.companyName}

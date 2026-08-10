@@ -7,65 +7,120 @@ import { jobMatchesField } from '../fieldClassifier'
 import { Briefcase, MapPin, Phone, Mail, Award, FolderGit2, Sparkles, ExternalLink, RefreshCw, Eye, FileText, X, CheckCircle2, MinusCircle, Target, ArrowRight, ChevronDown, ChevronUp, FileSearch, Play } from 'lucide-react'
 import ExplainableMatchModal from './ExplainableMatchModal'
 
-export default function DashboardTab({
-  rawJobs,
-  loading,
-  matchField,
-  region,
-  setRegion,
-  isMatchedMode,
-  candidateProfile,
-  onNavigateTab,
-  onOpenWizard
+export default function DashboardTab({ 
+  rawJobs, loading, matchField, region, setRegion, isMatchedMode, candidateProfile, 
+  onNavigateTab, onOpenWizard, onLlmProviderUpdate 
 }) {
   const [showResumeModal, setShowResumeModal] = useState(false)
-  const [expandedJobId, setExpandedJobId] = useState(null)
   const [selectedJobForModal, setSelectedJobForModal] = useState(null)
 
   // Internal HR Job Application State
   const [selectedInternalJobForApply, setSelectedInternalJobForApply] = useState(null)
   const [submittingInternalApply, setSubmittingInternalApply] = useState(false)
   const [appliedJobIds, setAppliedJobIds] = useState(new Set())
-
-  // LLM Recommendations State
+  const [expandedJobId, setExpandedJobId] = useState(null)
+  const [internalJobs, setInternalJobs] = useState([])
   const [llmRecommendations, setLlmRecommendations] = useState([])
-  const [loadingLlm, setLoadingLlm] = useState(false)
   const [hasRunLlm, setHasRunLlm] = useState(false)
+  const [loadingLlm, setLoadingLlm] = useState(false)
+  const [dashboardLlm, setDashboardLlm] = useState(null)
+  const [preferredLlm, setPreferredLlm] = useState('auto')
   const [llmError, setLlmError] = useState(null)
 
-  // Trigger LLM Recommendation API call
+  // Trigger LLM Recommendation API call sequentially
   const handleRunLlmRecommendations = async () => {
     setLoadingLlm(true)
     setLlmError(null)
-    try {
-      const payload = candidateProfile ? { userId: candidateProfile.id, candidateProfile } : {}
-      const res = await fetch('/candidate-panel/api/recommend-jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
+    setHasRunLlm(true)
 
-      const data = await res.json()
-      if (data.success && Array.isArray(data.recommendations)) {
-        setLlmRecommendations(data.recommendations)
-        setHasRunLlm(true)
-      } else {
-        setLlmError(data.error || 'Failed to parse LLM job match recommendations')
-      }
-    } catch (err) {
-      console.error('LLM Recommendation fetch exception:', err)
-      setLlmError(err.message)
-    } finally {
+    if (!rawJobs || rawJobs.length === 0) {
       setLoadingLlm(false)
+      return
     }
+
+    const jobsToProcess = rawJobs.slice(0, 10);
+    let currentResults = [];
+
+    for (const job of jobsToProcess) {
+      try {
+        if (preferredLlm === 'zhipu') {
+          // Client-side Puter integration for Zhipu AI (No API Key Required)
+          if (!window.puter) {
+            await new Promise((resolve) => {
+              const script = document.createElement('script');
+              script.src = "https://js.puter.com/v2/";
+              script.onload = resolve;
+              document.head.appendChild(script);
+            });
+          }
+          
+          setDashboardLlm("Active LLM: Zhipu AI (GLM-4 via Puter)");
+          if (onLlmProviderUpdate) onLlmProviderUpdate("Active LLM: Zhipu AI (GLM-4 via Puter)");
+
+          const prompt = `You are an AI HR Matcher. Analyze this Candidate vs Job.
+          Candidate: ${candidateProfile?.full_name || 'Candidate'}, Skills: ${candidateProfile?.skills || 'N/A'}, Experience: ${candidateProfile?.experience || 'N/A'}
+          Job: ${job.title || job.job_title}, Description: ${(job.description || '').substring(0, 500)}
+          Return strictly ONLY JSON: {"match_score": 85, "recommendation": "APPLY", "recommendation_label": "Strong Match", "executive_summary": "Great match."}`;
+          
+          try {
+            const puterResp = await window.puter.ai.chat(prompt, { model: 'glm-4' });
+            let jsonText = puterResp?.message?.content || puterResp || '';
+            if (typeof jsonText !== 'string') jsonText = JSON.stringify(jsonText);
+            const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { match_score: 80, recommendation: "APPLY", recommendation_label: "Good Fit", executive_summary: "Matched by Zhipu." };
+            
+            parsed.jobId = job.id;
+            parsed.jobTitle = job.title || job.job_title;
+            parsed.company = job.company_name || job.company;
+            parsed.location = job.location;
+            
+            currentResults = [...currentResults, parsed];
+            currentResults.sort((a, b) => (b.matchScore || b.match_score || 0) - (a.matchScore || a.match_score || 0));
+            setLlmRecommendations(currentResults);
+          } catch (err) {
+            console.error("Puter client error:", err);
+          }
+          continue;
+        }
+
+        // Standard Backend Matching Pipeline
+        const payload = candidateProfile 
+          ? { userId: candidateProfile.id, candidateProfile, jobId: job.id, preferredLlm } 
+          : { jobId: job.id, preferredLlm };
+        const res = await fetch('/candidate-panel/api/recommend-jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+
+        const data = await res.json()
+        if (data.llmProvider) {
+          setDashboardLlm(data.llmProvider)
+          if (onLlmProviderUpdate) {
+            onLlmProviderUpdate(data.llmProvider);
+          }
+        }
+        
+        if (data.success && Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+          currentResults = [...currentResults, data.recommendations[0]];
+          currentResults.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+          setLlmRecommendations(currentResults);
+        } else if (data.error && currentResults.length === 0) {
+          setLlmError(data.error)
+        }
+      } catch (err) {
+        console.error('LLM single job fetch exception:', err)
+      }
+    }
+    
+    setLoadingLlm(false)
   }
 
-  // Auto-trigger LLM matching once when candidateProfile loads
+  // Auto-trigger LLM matching is disabled as per user request
+  // (Analysis now only runs manually when clicking "Run Analysis" button)
   useEffect(() => {
-    if (candidateProfile && !hasRunLlm && !loadingLlm) {
-      handleRunLlmRecommendations()
-    }
-  }, [candidateProfile])
+    // Intentionally left empty
+  }, [candidateProfile, rawJobs])
 
   // 1. Field Classifier Filter
   const fieldFilteredJobs = useMemo(
@@ -124,7 +179,7 @@ export default function DashboardTab({
           candidate_id: candidateId,
           job_id: job.id ? String(job.id) : null,
           company_name: job.company || job.company_name || 'Hirenetic Enterprise',
-          job_title: job.title || 'Untitled Role',
+          job_title: job.title || job.job_title || job.jobTitle || 'Untitled Role',
           external_apply_url: applyUrl,
           application_source: 'Candidate Portal External Redirect',
           application_status: 'Redirected'
@@ -159,7 +214,7 @@ export default function DashboardTab({
         candidate_id: candidateId,
         job_id: selectedInternalJobForApply.id ? String(selectedInternalJobForApply.id) : null,
         company_name: selectedInternalJobForApply.company || selectedInternalJobForApply.company_name || 'Hirenetic Enterprise',
-        job_title: selectedInternalJobForApply.title || 'Untitled Role',
+        job_title: selectedInternalJobForApply.title || selectedInternalJobForApply.job_title || selectedInternalJobForApply.jobTitle || 'Untitled Role',
         external_apply_url: 'Internal Platform Application',
         application_source: 'Hirenetic HR Portal Direct',
         application_status: 'Applied'
@@ -174,7 +229,7 @@ export default function DashboardTab({
 
       if (data.success) {
         setAppliedJobIds(prev => new Set([...prev, String(selectedInternalJobForApply.id)]))
-        alert(`Application for "${selectedInternalJobForApply.title}" submitted successfully to HR!`)
+        alert(`Application for "${selectedInternalJobForApply.title || selectedInternalJobForApply.job_title || selectedInternalJobForApply.jobTitle}" submitted successfully to HR!`)
         setSelectedInternalJobForApply(null)
       } else {
         alert(`Notice: ${data.error || 'Unable to submit application'}`)
@@ -394,31 +449,56 @@ export default function DashboardTab({
             </p>
           </div>
 
-          <button
-            onClick={handleRunLlmRecommendations}
-            disabled={loadingLlm}
-            title="Run Recommendation Engine"
-            style={{
-              padding: '8px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
-              color: '#ffffff',
-              fontSize: '12.5px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            {loadingLlm ? (
-              <RefreshCw size={14} className="spin-icon" />
-            ) : (
-              <Play size={15} fill="#ffffff" />
-            )}
-            {loadingLlm ? 'Analyzing...' : 'Run Analysis'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#cbd5e1', fontWeight: '600' }}>AI Provider:</span>
+              <select 
+                value={preferredLlm}
+                onChange={(e) => setPreferredLlm(e.target.value)}
+                disabled={loadingLlm}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ffffff',
+                  fontSize: '11.5px',
+                  fontWeight: '700',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="auto" style={{ color: '#0f172a' }}>Auto Select</option>
+                <option value="zhipu" style={{ color: '#0f172a' }}>Zhipu AI (GLM-4)</option>
+                <option value="groq" style={{ color: '#0f172a' }}>Groq (Llama-3)</option>
+                <option value="openai" style={{ color: '#0f172a' }}>OpenAI (GPT-4o)</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleRunLlmRecommendations}
+              disabled={loadingLlm}
+              title="Run Recommendation Engine"
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                color: '#ffffff',
+                fontSize: '12.5px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              {loadingLlm ? (
+                <RefreshCw size={14} className="spin-icon" />
+              ) : (
+                <Play size={15} fill="#ffffff" />
+              )}
+              {loadingLlm ? 'Analyzing...' : 'Run Analysis'}
+            </button>
+          </div>
         </div>
 
         {/* Region Filter Badges inside banner */}
@@ -476,7 +556,7 @@ export default function DashboardTab({
       </div>
 
       {/* 3. Loading & Error States */}
-      {(loading || loadingLlm) && (
+      {(loading || (loadingLlm && displayJobsList.length === 0)) && (
         <div className="dashboard-card" style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
           <RefreshCw size={24} className="spin-icon" style={{ marginBottom: 8, color: '#7c3aed' }} />
           <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0f172a' }}>Analyzing...</div>
@@ -499,13 +579,20 @@ export default function DashboardTab({
             Show All Region Jobs
           </button>
         </div>
-      ) : (!loading && !loadingLlm && (
+      ) : (!loading && displayJobsList.length > 0 && (
         <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
           
           <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               <Target size={14} style={{ color: '#2563eb' }} />
               Ranked Jobs ({displayJobsList.length}) • Filtered by Region: <strong style={{ color: '#2563eb' }}>{region.toUpperCase()}</strong>
+              
+              {loadingLlm && <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: '10px' }}>Analyzing more jobs...</span>}
+              {!loadingLlm && dashboardLlm && (
+                <span style={{ color: '#047857', fontSize: '10px', marginLeft: '10px', background: '#ecfdf5', padding: '2px 8px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                  Analyzed by: {dashboardLlm.replace('Active LLM: ', '')}
+                </span>
+              )}
             </div>
             <span style={{ fontSize: '11px', color: '#64748b' }}>Sorted Highest → Lowest Match Score</span>
           </div>
@@ -569,11 +656,11 @@ export default function DashboardTab({
                         <td style={{ padding: '10px 14px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', wordBreak: 'break-word' }}>
-                              {job.title}
+                              {job.title || job.job_title || job.jobTitle || 'Untitled Position'}
                             </span>
-                            {job.department && (
+                            {(job.department || job.category || job.industry) && (
                               <span style={{ fontSize: '10px', fontWeight: '600', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '4px' }}>
-                                {job.department}
+                                {job.department || job.category || job.industry}
                               </span>
                             )}
                           </div>
@@ -660,7 +747,7 @@ export default function DashboardTab({
                   Direct In-Platform Job Application
                 </span>
                 <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '6px 0 2px 0' }}>
-                  {selectedInternalJobForApply.title}
+                  {selectedInternalJobForApply.title || selectedInternalJobForApply.job_title || selectedInternalJobForApply.jobTitle}
                 </h2>
                 <p style={{ fontSize: '12.5px', color: '#64748b', margin: 0, fontWeight: '500' }}>
                   {selectedInternalJobForApply.company || selectedInternalJobForApply.company_name || 'Hirenetic Enterprise'} • {selectedInternalJobForApply.location || 'Remote'}

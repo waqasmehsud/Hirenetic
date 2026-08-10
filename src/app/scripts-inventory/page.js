@@ -334,7 +334,7 @@ export default function ScriptsInventoryPage() {
   };
 
   // ---- Run ----
-  const [runMode, setRunMode] = useState('local'); // 'local' or 'github'
+  const [runMode, setRunMode] = useState('github'); // 'github' only
   const runIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
 
@@ -365,70 +365,7 @@ export default function ScriptsInventoryPage() {
       .eq('id', script.id)
       .then();
 
-    if (mode === 'local') {
-      setTerminalLines([
-        { text: `$ python "${script.filename || 'script.py'}"`, prompt: true },
-        { text: `[init] Executing Python script on local runtime environment...`, type: 'info' }
-      ]);
-
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch('/api/run-python-local', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token || ''}`
-          },
-          body: JSON.stringify({
-            script_code: script.code,
-            script_filename: script.filename,
-          }),
-        });
-        const data = await res.json();
-        clearInterval(timerIntervalRef.current);
-
-        if (data.error) {
-          setTerminalLines((prev) => [
-            ...prev,
-            { text: `[ERROR] ${data.error}`, type: 'error' },
-            { text: `[exit] Execution failed`, type: 'error' }
-          ]);
-          setTerminalStatus('failed');
-          return;
-        }
-
-        const linesToAdd = [];
-        if (data.stdout) {
-          data.stdout.trim().split('\n').forEach((line) => {
-            linesToAdd.push({ text: line, type: 'success' });
-          });
-        }
-        if (data.stderr) {
-          data.stderr.trim().split('\n').forEach((line) => {
-            linesToAdd.push({ text: line, type: 'error' });
-          });
-        }
-        if (!data.stdout && !data.stderr) {
-          linesToAdd.push({ text: `Script executed silently with 0 output lines.`, type: 'info' });
-        }
-
-        linesToAdd.push({
-          text: `[exit] Process exited with code ${data.exitCode}`,
-          type: data.success ? 'success' : 'error',
-        });
-
-        setTerminalLines((prev) => [...prev, ...linesToAdd]);
-        setTerminalStatus(data.success ? 'completed' : 'failed');
-        fetchScripts();
-      } catch (err) {
-        clearInterval(timerIntervalRef.current);
-        setTerminalLines((prev) => [
-          ...prev,
-          { text: `[ERROR] Failed to run local python script: ${err.message}`, type: 'error' }
-        ]);
-        setTerminalStatus('failed');
-      }
-    } else {
+    {
       setTerminalLines([
         { text: `$ github-actions dispatch "${script.filename || 'script.py'}"`, prompt: true },
         { text: `[init] Sending dispatch payload to GitHub Actions workflow...`, type: 'info' }
@@ -545,7 +482,7 @@ export default function ScriptsInventoryPage() {
     }
   };
 
-  const openRunModal = (script, mode = 'local') => {
+  const openRunModal = (script, mode = 'github') => {
     if (script.status === 'Disabled') {
       showToast(`Cannot run "${script.name}" — Script status is Disabled. Change status to Active in Edit -> Settings to run.`, 'error');
       return;
@@ -579,42 +516,7 @@ export default function ScriptsInventoryPage() {
     showToast('Code copied to clipboard');
   };
 
-  const handleRunTest = async () => {
-    setConsoleOutput('[init] Executing code payload on local Python runtime...\n');
-    try {
-      const { data: { session: testSession } } = await supabase.auth.getSession();
-      const res = await fetch('/api/run-python-local', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${testSession?.access_token || ''}`
-        },
-        body: JSON.stringify({
-          script_code: editCode,
-          script_filename: editSettings.filename || 'script.py',
-        }),
-      });
-      const data = await res.json();
-      if (data.error) {
-        setConsoleOutput(`[error] Server error: ${data.error}\n`);
-        return;
-      }
-      let out = '[info] Real Python Execution Result:\n';
-      if (data.stdout) {
-        out += `[STDOUT]\n${data.stdout}\n`;
-      }
-      if (data.stderr) {
-        out += `[STDERR / ERROR]\n${data.stderr}\n`;
-      }
-      if (!data.stdout && !data.stderr) {
-        out += '[info] Execution finished silently (No output).\n';
-      }
-      out += `[done] Process exited with code ${data.exitCode}\n`;
-      setConsoleOutput(out);
-    } catch (err) {
-      setConsoleOutput(`[error] Failed to connect to Python runner: ${err.message}\n`);
-    }
-  };
+
 
   // ---- Refresh ----
   const handleRefresh = async () => {
@@ -639,16 +541,11 @@ export default function ScriptsInventoryPage() {
       <header className="si-topbar">
         <div className="si-topbar-left">
           <div className="si-brand">
-            <div className="si-brand-icon">{icons.atom}</div>
+            <img src="/logo.svg" alt="Hirenetic Logo" style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }} />
           </div>
           <div className="si-brand-divider" />
           <div>
             <div className="si-page-title">Custom Scripts</div>
-            <div className="si-breadcrumb">
-              <span onClick={() => router.replace('/admin-panel')} style={{ cursor: 'pointer', textDecoration: 'underline' }}>Admin</span> <span className="si-breadcrumb-sep">/</span>
-              <span>Automation</span> <span className="si-breadcrumb-sep">/</span>
-              <span>CustomScripts</span>
-            </div>
           </div>
         </div>
         <div className="si-topbar-right">
@@ -779,7 +676,7 @@ export default function ScriptsInventoryPage() {
                     </td>
                     <td>
                       <div className="si-actions">
-                        <button className="si-action-btn run" title="Run Script" onClick={() => openRunModal(script)}>
+                        <button className="si-action-btn run" title="Run Script (GitHub)" onClick={() => openRunModal(script, 'github')}>
                           {icons.play}
                         </button>
                         <button className="si-action-btn edit" title="Edit Script" onClick={() => openEditModal(script)}>
@@ -891,7 +788,7 @@ export default function ScriptsInventoryPage() {
                 <span className="si-editor-runtime">Python 3.11</span>
               </div>
               <div className="si-editor-actions">
-                <button className="si-editor-btn run-test" onClick={handleRunTest}>{icons.play} Run Test</button>
+
                 <button className="si-editor-btn" onClick={handleCodeFormat}>{icons.format} Format</button>
                 <button className="si-editor-btn" onClick={handleCodeCopy}>{icons.copy} Copy</button>
               </div>
@@ -925,18 +822,7 @@ export default function ScriptsInventoryPage() {
                       placeholder="# Write your Python code here..."
                     />
                   </div>
-                  {consoleOutput && (
-                    <div className="si-sandbox-console">
-                      <div className="si-sandbox-console-header">CONSOLE OUTPUT</div>
-                      <pre className="si-console-output">
-                        {consoleOutput.split('\n').map((line, i) => (
-                          <div key={i} className={line.includes('[done]') ? 'success' : line.includes('[error]') ? 'error' : 'info'}>
-                            {line}
-                          </div>
-                        ))}
-                      </pre>
-                    </div>
-                  )}
+
                 </>
               ) : (
                 <div style={{ padding: 24 }}>
@@ -1126,18 +1012,10 @@ export default function ScriptsInventoryPage() {
               <div>
                 <span className="si-modal-title">Script Execution — {runModal.name}</span>
                 <div style={{ fontSize: '0.78rem', color: 'var(--si-text-muted)', marginTop: 2 }}>
-                  Mode: <strong>{runMode === 'local' ? 'Local System Python Runtime' : 'Live GitHub Actions Cloud Workflow'}</strong>
+                  Mode: <strong>Live GitHub Actions Cloud Workflow</strong>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
-                <button
-                  className={`si-btn ${runMode === 'local' ? 'si-btn-primary' : 'si-btn-ghost'}`}
-                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
-                  onClick={() => executeRun(runModal, 'local')}
-                  disabled={terminalStatus === 'running'}
-                >
-                  Local Run
-                </button>
                 <button
                   className={`si-btn ${runMode === 'github' ? 'si-btn-primary' : 'si-btn-ghost'}`}
                   style={{ padding: '4px 10px', fontSize: '0.75rem' }}

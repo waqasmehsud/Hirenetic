@@ -47,7 +47,7 @@ export default function HRPanelPage() {
 
   const handleUnlockAdmin = (e) => {
     e?.preventDefault();
-    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('hr_admin_passcode')) || 'admin123';
+    const storedPasscode = (typeof window !== 'undefined' && localStorage.getItem('hr_admin_passcode')) || process.env.NEXT_PUBLIC_HR_PASSCODE || '';
     if (passcodeInput.trim() === storedPasscode.trim()) {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('hr_admin_unlocked', 'true');

@@ -4,12 +4,15 @@ import { createClient } from '@supabase/supabase-js'
 export const dynamic = 'force-dynamic'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
 export async function POST(request) {
   try {
+    if (!supabaseUrl || !serviceKey) {
+      return NextResponse.json({ success: false, error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     const body = await request.json()
     const { email, password, fullName, companyName, designation, industry, companySize } = body
 
@@ -41,11 +44,10 @@ export async function POST(request) {
     if (authError) {
       // If user already exists in Auth, fetch user ID or continue to profile creation
       if (authError.message?.toLowerCase().includes('already registered')) {
-        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-        const matchedUser = (existingUsers?.users || []).find(u => u.email?.toLowerCase() === cleanEmail)
-        if (matchedUser) {
-          userId = matchedUser.id
-        }
+        return NextResponse.json(
+          { success: false, error: 'An account with this email already exists. Please log in instead.', alreadyRegistered: true },
+          { status: 400 }
+        )
       } else {
         console.error('Supabase Admin createUser error:', authError)
         return NextResponse.json(

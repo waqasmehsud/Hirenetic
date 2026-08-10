@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import { verifyAuth } from '@/lib/authGuard'
 
 // Force dynamic execution on every API request so real-time updated DB data is always returned
 export const dynamic = 'force-dynamic'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
@@ -75,6 +76,9 @@ function extractDynamicFields(job) {
 
 export async function GET(request) {
   try {
+    if (!supabaseUrl || !serviceKey) {
+      return Response.json({ success: false, error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     // 1. Extract API Key from Request Headers or Query Parameters
     const { searchParams } = new URL(request.url)
     const apiKeyFromQuery = searchParams.get('api_key')
@@ -94,13 +98,23 @@ export async function GET(request) {
       )
     }
 
-    // 3. Timing-Safe API Key Authentication Check (Allow public_widget bypass if requested)
+    // 3. Timing-Safe API Key Authentication Check
     const isPublicWidget = searchParams.get('public_widget') === 'true';
-    if (!isPublicWidget && (!clientApiKey || !safeCompare(clientApiKey, expectedApiKey))) {
-      return Response.json(
-        { success: false, error: 'Unauthorized: Invalid or missing API key' },
-        { status: 401, headers: { 'WWW-Authenticate': 'Bearer realm="Access to exposed-api"' } }
-      )
+    const isApiKeyValid = clientApiKey && safeCompare(clientApiKey, expectedApiKey);
+
+    let requestingUser = null;
+    let requestingRole = null;
+
+    if (!isApiKeyValid) {
+      const { user, error } = await verifyAuth(request);
+      if (error || !user) {
+        return Response.json(
+          { success: false, error: 'Unauthorized: Invalid API key or User Session' },
+          { status: 401, headers: { 'WWW-Authenticate': 'Bearer realm="Access to exposed-api"' } }
+        )
+      }
+      requestingUser = user;
+      requestingRole = user.user_metadata?.role || 'candidate';
     }
 
     // 4. CANDIDATE WIDGET EXPOSED DATA ENGINE
@@ -125,14 +139,15 @@ export async function GET(request) {
       }
 
       if (!targetCandidate) {
-        const { data: fallbackList } = await supabaseAdmin.from('candidates_profiles').select('*').limit(1);
-        if (fallbackList && fallbackList.length > 0) {
-          targetCandidate = fallbackList[0];
-        }
+        return Response.json({ success: false, error: 'Candidate profile not found' }, { status: 404 });
       }
 
-      if (!targetCandidate) {
-        return Response.json({ success: false, error: 'Candidate profile not found' }, { status: 404 });
+      // 5. Authorization Check (IDOR Fix)
+      if (!isApiKeyValid) {
+        const isAuthorized = requestingRole === 'admin' || requestingRole === 'hr' || requestingUser.id === targetCandidate.id;
+        if (!isAuthorized) {
+          return Response.json({ success: false, error: 'Forbidden: You do not have permission to view this candidate profile' }, { status: 403 });
+        }
       }
 
       // Fetch Applications for this candidate

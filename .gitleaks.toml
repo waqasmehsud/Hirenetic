@@ -1,0 +1,37 @@
+title = "Hirenetic Gitleaks Configuration"
+
+[allowlist]
+  description = "Allowlisted files and paths"
+  paths = [
+    '''node_modules/''',
+    '''.next/''',
+    '''coverage/''',
+    '''dist/''',
+    '''build/''',
+    '''package-lock\.json''',
+    '''\.gitleaks\.toml'''
+  ]
+
+[[rules]]
+  id = "supabase-service-role-key"
+  description = "Supabase Service Role Key"
+  regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}'''
+  keywords = ["service_role", "SUPABASE_SERVICE_ROLE"]
+
+[[rules]]
+  id = "github-pat"
+  description = "GitHub Personal Access Token"
+  regex = '''github_pat_[A-Za-z0-9_]{20,}'''
+  keywords = ["github_pat"]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API Key in assignment"
+  regex = '''(?i)(api[_-]?key|apikey|secret|token|password)\s*[=:]\s*['"][A-Za-z0-9_\-\.]{16,}['"]'''
+  keywords = ["api_key", "secret", "token", "password"]
+
+[[rules]]
+  id = "resend-api-key"
+  description = "Resend API Key"
+  regex = '''re_[A-Za-z0-9_]{10,}'''
+  keywords = ["re_", "RESEND"]

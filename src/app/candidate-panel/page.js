@@ -26,6 +26,7 @@ export default function CandidatePanelPage() {
   const [loadingJobs, setLoadingJobs] = useState(true)
   const [matchField, setMatchField] = useState(null)
   const [region, setRegion] = useState('all')
+  const [dynamicLlmProvider, setDynamicLlmProvider] = useState(null)
 
   // 1. Auth Guard & Full Candidate Profile Fetch
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function CandidatePanelPage() {
         setActiveTab={setActiveTab}
         userEmail={user?.email}
         candidateProfile={candidateProfile}
+        dynamicLlmProvider={dynamicLlmProvider}
         onLogout={handleLogout}
         onOpenWizard={() => setShowOnboarding(true)}
       />
@@ -168,6 +170,7 @@ export default function CandidatePanelPage() {
             candidateProfile={candidateProfile}
             onNavigateTab={(tab) => setActiveTab(tab)}
             onOpenWizard={() => setShowOnboarding(true)}
+            onLlmProviderUpdate={setDynamicLlmProvider}
           />
         )}
 

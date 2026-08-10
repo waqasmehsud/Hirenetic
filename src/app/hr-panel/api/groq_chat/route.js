@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { requireEmployer } from '@/lib/authGuard';
 
 export const dynamic = 'force-dynamic';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 async function getLlmKey() {
@@ -50,6 +51,11 @@ async function getLlmKey() {
 
 export async function POST(req) {
   try {
+    const { user, employer, error: authError } = await requireEmployer(req)
+    if (authError) return NextResponse.json({ error: authError }, { status: 403 })
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     const { messages = [] } = await req.json();
     const credentials = await getLlmKey();
 

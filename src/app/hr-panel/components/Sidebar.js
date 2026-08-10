@@ -66,19 +66,11 @@ export default function Sidebar({
       {/* Brand Header */}
       <div style={{ padding: '18px 20px', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-            color: '#ffffff',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-          }}>
-            <Code2 size={18} />
-          </div>
+          <img 
+            src="/logo.svg" 
+            alt="Hirenetic Logo" 
+            style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} 
+          />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontWeight: '800', fontSize: '15px', color: '#0f172a', letterSpacing: '-0.3px' }}>
               {BRAND_CONFIG.companyName}

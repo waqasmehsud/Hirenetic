@@ -285,26 +285,28 @@ export default function ApiManagementPanelPage() {
               <span style={{ backgroundColor: '#2563eb', color: '#ffffff', fontSize: '10.5px', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>GET Endpoint</span>
             </div>
             <p style={{ fontSize: '12.5px', color: '#3b82f6', margin: 0 }}>
-              Exposes complete candidate widget payload (Match Score, Resume Score, Verifications, History, Work & Projects) for public embedding.
+              Exposes complete candidate widget payload. <b>Authentication Required:</b> You must append <code>&api_key=YOUR_API_KEY</code> to the URL to access these endpoints.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <a
-              href="/exposed-api?public_widget=true"
-              target="_blank"
-              rel="noreferrer"
-              style={{ padding: '6px 12px', background: '#2563eb', color: '#ffffff', borderRadius: '6px', fontSize: '12px', fontWeight: 700, textDecoration: 'none' }}
+            <button
+              onClick={() => {
+                const key = prompt("Enter your Hirenetic API Key to test the Exposed API:");
+                if (key) window.open(`/exposed-api?public_widget=true&api_key=${key}`, "_blank");
+              }}
+              style={{ padding: '6px 12px', background: '#2563eb', border: 'none', cursor: 'pointer', color: '#ffffff', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}
             >
               Test Exposed API JSON
-            </a>
-            <a
-              href="/candidate-widget"
-              target="_blank"
-              rel="noreferrer"
-              style={{ padding: '6px 12px', background: '#ffffff', border: '1px solid #93c5fd', color: '#1d4ed8', borderRadius: '6px', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}
+            </button>
+            <button
+              onClick={() => {
+                const key = prompt("Enter your Hirenetic API Key to view the Widget:");
+                if (key) window.open(`/candidate-widget?api_key=${key}`, "_blank");
+              }}
+              style={{ padding: '6px 12px', background: '#ffffff', border: '1px solid #93c5fd', cursor: 'pointer', color: '#1d4ed8', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}
             >
               Open Candidate Widget View ↗
-            </a>
+            </button>
           </div>
         </div>
 

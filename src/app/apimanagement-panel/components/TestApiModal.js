@@ -30,6 +30,7 @@ export function TestApiModal({ isOpen, onClose, api, onQuotaIncrement }) {
       const isGemini = apiKey.startsWith('aiza') || providerStr.includes('google') || providerStr.includes('gemini') || modelStr.includes('gemini');
       const isOpenRouter = apiKey.startsWith('sk-or-') || providerStr.includes('openrouter');
       const isOpenAI = apiKey.startsWith('sk-') && !isOpenRouter;
+      const isZhipu = providerStr.includes('zhipu') || providerStr.includes('glm') || modelStr.includes('glm');
 
       // 1. Groq API Runner
       if (isGroq) {
@@ -139,10 +140,44 @@ export function TestApiModal({ isOpen, onClose, api, onQuotaIncrement }) {
         return;
       }
 
-      // 3. OpenRouter or OpenAI API Runner
-      if (isOpenRouter || isOpenAI) {
-        const baseUrl = api.base_url || (isOpenRouter ? 'https://openrouter.ai/api/v1' : 'https://api.openai.com/v1');
-        const defaultModel = isOpenRouter ? 'openai/gpt-3.5-turbo' : 'gpt-3.5-turbo';
+      // 3. Puter.js Free GLM Fallback
+      if (isZhipu && !apiKey) {
+        try {
+          if (!window.puter) {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = "https://js.puter.com/v2/";
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+          const response = await window.puter.ai.chat(prompt);
+          setResult({
+            success: true,
+            status: '200 OK (Puter.js Free API)',
+            latency: `${Date.now() - startTime}ms`,
+            response: typeof response === 'string' ? response : (response?.message?.content || JSON.stringify(response))
+          });
+        } catch (err) {
+          setResult({
+            success: false,
+            status: 'Puter API Error',
+            latency: `${Date.now() - startTime}ms`,
+            response: err.message || 'Failed to connect via Puter.js'
+          });
+        }
+        setTesting(false);
+        return;
+      }
+
+      // 4. OpenRouter, OpenAI, or Zhipu AI (GLM) API Runner
+      if (isOpenRouter || isOpenAI || isZhipu) {
+        let baseUrl = api.base_url || (isOpenRouter ? 'https://openrouter.ai/api/v1' : 'https://api.openai.com/v1');
+        if (isZhipu) baseUrl = api.base_url || 'https://open.bigmodel.cn/api/paas/v4';
+        
+        let defaultModel = isOpenRouter ? 'openai/gpt-3.5-turbo' : 'gpt-3.5-turbo';
+        if (isZhipu) defaultModel = 'glm-4';
 
         const res = await fetch(`${baseUrl}/chat/completions`, {
           method: 'POST',

@@ -10,3 +10,9 @@ node_modules/
 # Documentation / MDFiles
 MDFILES/
 
+# Security scan artifacts
+semgrep-results.json
+trivy-fs-results.txt
+trivy-config-results.txt
+audit-output.txt
+

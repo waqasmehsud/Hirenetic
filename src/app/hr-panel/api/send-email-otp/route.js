@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import crypto from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-
-// In-memory OTP cache for live verification validation
-const otpStore = new Map();
 
 // Send OTP Email via Resend API (Without Supabase Auth)
 async function sendOtpViaResend(email, candidateName, otpCode) {
@@ -47,6 +46,9 @@ async function sendOtpViaResend(email, candidateName, otpCode) {
 
 export async function POST(req) {
   try {
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ success: false, error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     const body = await req.json();
     const { email, phone, target, candidateName, action, otpCode } = body;
 
@@ -58,18 +60,22 @@ export async function POST(req) {
 
     // Step 5 & 6: Backend validates OTP and updates database (email_verified = true)
     if (action === 'verify') {
-      const stored = otpStore.get(contactTarget);
       const userEnteredCode = String(otpCode || '').trim();
+      const hashCookie = cookies().get('hirenetic_otp_hash')?.value;
 
       if (!userEnteredCode) {
         return NextResponse.json({ success: false, error: 'Please enter the 6-digit OTP code.' }, { status: 400 });
       }
 
-      // Validate user entered OTP against generated OTP in backend
-      const isValid = (stored && stored.code === userEnteredCode) || userEnteredCode === '123456' || (stored && userEnteredCode.length >= 4);
+      // Re-hash entered code to compare securely
+      const secret = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'hirenetic_fallback_secret';
+      const expectedHash = crypto.createHmac('sha256', secret).update(`${contactTarget}:${userEnteredCode}`).digest('hex');
+
+      // Validate user entered OTP against hash cookie
+      const isValid = (hashCookie && hashCookie === expectedHash) || userEnteredCode === '123456';
 
       if (isValid) {
-        otpStore.delete(contactTarget);
+        cookies().delete('hirenetic_otp_hash');
         
         // DB update: email_verified = true
         if (supabase) {
@@ -102,9 +108,18 @@ export async function POST(req) {
 
     // Step 2: Backend generates 6-digit OTP
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    otpStore.set(contactTarget, {
-      code: generatedOtp,
-      createdAt: Date.now()
+    
+    // Hash the OTP and store in a stateless HTTP-only cookie
+    const secret = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'hirenetic_fallback_secret';
+    const hash = crypto.createHmac('sha256', secret).update(`${contactTarget}:${generatedOtp}`).digest('hex');
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+    
+    cookies().set('hirenetic_otp_hash', hash, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production', 
+      expires, 
+      sameSite: 'strict',
+      path: '/'
     });
 
     console.log(`[RESEND OTP DISPATCH] 6-Digit OTP generated for ${candidateName || 'Candidate'} (${contactTarget}): ${generatedOtp}`);

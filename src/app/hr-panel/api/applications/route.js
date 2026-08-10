@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireEmployer } from '@/lib/authGuard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-// GET: Fetch all job applications joined with candidate profile data
-export async function GET() {
+export async function GET(request) {
   try {
-    if (!supabaseUrl) {
+    const { user, employer, error: authError } = await requireEmployer(request)
+    if (authError) return NextResponse.json({ success: false, applications: [], error: authError }, { status: 403 })
+    if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ success: false, applications: [] }, { status: 500 })
     }
 
@@ -122,9 +124,10 @@ export async function GET() {
   }
 }
 
-// PATCH / PUT: Update application status
 export async function PATCH(req) {
   try {
+    const { user, employer, error: authError } = await requireEmployer(req)
+    if (authError) return NextResponse.json({ success: false, error: authError }, { status: 403 })
     const body = await req.json()
     const { application_id, status } = body
 

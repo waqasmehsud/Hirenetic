@@ -4,12 +4,15 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
 export async function GET() {
   try {
+    if (!supabaseUrl || !serviceKey) {
+      return Response.json({ error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     const { data, error } = await supabaseAdmin
       .from('crwl_jobsData')
       .select('*')

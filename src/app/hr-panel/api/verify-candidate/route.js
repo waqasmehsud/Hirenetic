@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import dns from 'dns';
+import { requireEmployer } from '@/lib/authGuard';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Helper: fetch with timeout
@@ -390,6 +391,11 @@ async function generateAISummary(results, candidateData) {
 
 export async function POST(req) {
   try {
+    const { user, employer, error: authError } = await requireEmployer(req)
+    if (authError) return NextResponse.json({ success: false, error: authError }, { status: 403 })
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ success: false, error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     const body = await req.json();
     const { candidateId, candidateData = {} } = body;
 

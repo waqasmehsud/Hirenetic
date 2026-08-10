@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 const supabaseAdmin = createClient(supabaseUrl, serviceKey)
 
@@ -24,6 +24,9 @@ function safeErrorText(err, fallback = 'Failed to process candidate registration
 export async function POST(req) {
   try {
     const body = await req.json()
+    if (!supabaseUrl || !serviceKey) {
+      return Response.json({ error: 'Supabase URL or Key not configured' }, { status: 500 });
+    }
     const { email, password, fullName } = body
 
     if (!email || !password || !fullName) {
@@ -45,34 +48,10 @@ export async function POST(req) {
     }
 
     if (existingUser) {
-      // Update password & metadata for existing user so they can log in seamlessly
-      await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
-        password: cleanPassword,
-        user_metadata: {
-          full_name: cleanName,
-          role: 'candidate'
-        }
-      }).catch(() => {})
-
-      // Upsert profile in public.candidates_profiles
-      const profilePayload = {
-        id: existingUser.id,
-        email: cleanEmail,
-        full_name: cleanName,
-        updated_at: new Date().toISOString()
-      }
-
-      const { data: profileData } = await supabaseAdmin
-        .from('candidates_profiles')
-        .upsert(profilePayload, { onConflict: 'id' })
-        .select('*')
-        .single()
-
       return Response.json({
-        success: true,
-        user: profileData || profilePayload,
-        updatedExisting: true
-      })
+        error: 'An account with this email already exists. Please log in instead.',
+        alreadyRegistered: true
+      }, { status: 400 })
     }
 
     // 2. Attempt to Create New Candidate User in auth.users
