@@ -73,9 +73,9 @@ jobs:
               code = f.read()
           
           # Standard library modules to ignore
-          stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'datetime', 'random', 'typing', 'pathlib', 'sqlite3', 'collections', 'itertools'}
+          stdlib = {'os', 'sys', 'time', 'json', 're', 'math', 'datetime', 'random', 'typing', 'pathlib', 'sqlite3', 'collections', 'itertools', 'hashlib'}
           # Package mapping overrides if import name differs from pip package name
-          pip_map = {'bs4': 'beautifulsoup4', 'cv2': 'opencv-python', 'sklearn': 'scikit-learn', 'PIL': 'Pillow'}
+          pip_map = {'bs4': 'beautifulsoup4', 'cv2': 'opencv-python', 'sklearn': 'scikit-learn', 'PIL': 'Pillow', 'serpapi': 'google-search-results'}
           
           imports = set(re.findall(r'^(?:import|from)\s+([a-zA-Z0-9_]+)', code, re.MULTILINE))
           to_install = []
