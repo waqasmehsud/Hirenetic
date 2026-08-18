@@ -1,5 +1,14 @@
 # 🚀 Hirenetic — Enterprise AI-Powered Recruitment & HR Automation Platform
 
+First commit
+
+Each candidate has to create a separate branch for the task she/he has done with the intials of name such as 'wq_devsecops' You are the owner of your branch, ideally if I fetch it, I can run and deploy it to check what you have done on my pc.
+
+Please do functional commits as descriptive as possible and mention the changes required in this work.
+
+
+# ⚛️ Custom Scripts Inventory
+
 **Hirenetic** is a next-generation, full-stack enterprise recruitment, talent matching, and candidate verification platform built with **Next.js 14 (App Router)**, **PostgreSQL (Supabase)**, and **Multi-LLM Artificial Intelligence Engines (Groq Llama 3.3 70B, Google Gemini 1.5 Flash, OpenAI GPT-4o-mini)**.
 
 It seamlessly connects Candidates, HR Recruiters, and Platform Administrators in a unified, real-time ecosystem featuring multi-dimensional candidate matching, dynamic ATS scoring, real-time recruiter verification control, embeddable candidate widgets, and public developer APIs.
@@ -154,6 +163,7 @@ Access the containerized application at `http://localhost:3000`.
 
 ```text
 Hirenetic/
+├── .github/workflows/         # CI/CD and script runner GitHub Actions
 ├── schema/                    # Database SQL schemas & migrations
 ├── public/                    # Static assets & public widget.js script
 ├── src/
